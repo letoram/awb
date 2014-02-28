@@ -1166,7 +1166,8 @@ function awbwman_cancel()
 	elseif (awb_cfg.popup_active) then
 		drop_popup();
 	else
-		awbwman_confirm_dialog("Shutdown?", "shutdowndlg", shutdown, true);
+		awbwman_confirm_dialog("Shutdown?", "shutdowndlg", 
+			awbwman_shutdown, true);
 	end
 end
 

@@ -554,6 +554,45 @@ function gamelist_wnd(selection)
 	gamelist_tblwnd(tgttotal, tgtname);
 end
 
+function add_shortcut(dst, ctag)
+	local ind  = 1;
+--	local base = string.match(ctag.caption, "[%a %d_-]+");
+	local line = "shortcuts/" .. dst .. ".lnk";
+
+	if (open_rawresource(line)) then
+		write_rawresource(shortcut_str(dst, ctag));
+		close_rawresource();
+	else
+		return false;
+	end
+
+	if (not awbwman_rootgeticon(base)) then
+		local tbl = system_load(line)();
+
+		if (tbl ~= nil and 
+			tbl.factorystr and 
+			tbl.name and tbl.caption) then
+
+			local icn, w, h = get_root_icon(tbl.icon);
+			local icn = awbwman_rootaddicon(tbl.name, iconlbl(tbl.caption),
+				icn, icn, 
+				function() 
+					launch_factorytgt(tbl, tbl.factorystr); 
+				end, 
+				function(self) 
+					shortcut_popup(self, tbl, base .. ".lnk");	
+				end,
+				{w = w, h = h, helper = tbl.caption}
+			);
+
+			local mx, my = mouse_xy();
+			icn.x = math.floor(mx);
+			icn.y = math.floor(my);
+			move_image(icn.anchor, icn.x, icn.y);
+		end
+	end
+end
+
 function rootdnd(ctag)
 	local lbls = {};
 	local ftbl = {};
@@ -582,40 +621,24 @@ function rootdnd(ctag)
 
 	if (ctag.factory) then
 		table.insert(lbls, "Add Shortcut");
-
 		table.insert(ftbl, function()
-			local ind  = 1;
-			local base = string.match(ctag.caption, "[%a %d_-]+");
-			local line = "shortcuts/" .. base .. ".lnk";
-
-			while (resource(line)) do
-				line = string.format("shortcuts/%s_%d.lnk", base, ind);
-				ind = ind + 1;
-			end
-
-			while (awbwman_rootgeticon(base .. tostring(ind))) do
-				ind = ind + 1;
-			end
-
-			if (open_rawresource(line)) then
-				write_rawresource(shortcut_str(base .. tostring(ind), ctag));
-				close_rawresource();
-			end
-
-			local tbl = system_load(line)();
-				if (tbl ~= nil and tbl.factorystr and tbl.name and tbl.caption) then
-					local icn, w, h = get_root_icon(tbl.icon);
-
-					local icn = awbwman_rootaddicon(tbl.name, iconlbl(tbl.caption),
-						icn, icn, function() launch_factorytgt(tbl, tbl.factorystr); end, 
-						function(self) shortcut_popup(self, tbl, base .. ".lnk");	end,
-						{w = w, h = h, helper = tbl.caption});
-					local mx, my = mouse_xy();
-					icn.x = math.floor(mx);
-					icn.y = math.floor(my);
-					move_image(icn.anchor, icn.x, icn.y);
-				end
-			end);
+			local buttontbl = {
+				{ 
+					caption = desktoplbl("OK"), 
+					trigger = 
+						function(own)
+							add_shortcut(own.inputfield.msg, ctag);
+						end
+				},
+				{
+					caption = desktoplbl("Ccancel"),
+					trigger = function() end
+				}
+			};
+			local dlg = awbwman_dialog(desktoplbl("Shortcut Name:"), buttontbl,
+			{input = {w = 100, h = 20, limit = 32, accept = 1, cancel = 2}},
+			false);
+		end);
 	end
 
 	if (#lbls > 0) then
