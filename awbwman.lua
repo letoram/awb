@@ -888,6 +888,7 @@ function awbwman_dialog(caption, buttons, options, modal)
 		end
 	end
 
+	wnd:reposition();					
 	return wnd;
 end
 
@@ -1769,6 +1770,15 @@ function awbwman_spawn(caption, options)
 -- to override
 	local canvas = fill_surface(wcont.w, wcont.h, r, g, b);
 	wcont:update_canvas(canvas);
+
+	wcont.reposition = function()
+		if (wcont.x + wcont.w > VRESW) then
+			wcont:move(VRESW - wcont.w, wcont.y);
+		end
+		if (wcont.y + wcont.h > VRESH) then
+			wcont:move(wcont.x, VRESH - wcont.y);
+		end
+	end
 
 -- top windowbar
 	local tbar = wcont:add_bar("t", awb_cfg.activeres,
