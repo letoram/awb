@@ -269,6 +269,7 @@ function awbtarget_settingswin(tgtwin)
 	};
 
 	local modetbl = {
+		"Relative",
 		"Direct",
 		"Analog-Remap",
 		"Analog-Disable"
@@ -1154,7 +1155,7 @@ function awbwnd_target(pwin, caps, factstr)
 	pwin.ntsc_state = false;
 	pwin.set_coreopt = setcoreopt;
 
-	pwin.mouse_mode = "Direct";
+	pwin.mouse_mode = "Relative";
 	pwin.mouse_accel = 1.0;
 	pwin.mousex_pl = 1;
 	pwin.mousex_ax = 1;
@@ -1357,7 +1358,8 @@ function awbwnd_target(pwin, caps, factstr)
 				iotbl.samples[2] = iotbl.samples[2] * pwin.mouse_accel;
 			end
 	
--- if (direct) then just pass unaltered
+-- if (direct) then just pass unaltered (here's a good spot
+-- to add window- local cursor)
 			if (pwin.mouse_mode == "Analog-Remap") then
 				iotbl.samples[2] = nil;
 				if (iotbl.subid == 0) then
@@ -1367,8 +1369,11 @@ function awbwnd_target(pwin, caps, factstr)
 					iotbl.samples[1] = math.floor(
 						((iotbl.samples[1] / VRESH) - 0.5) * 32767);
 				end
+			elseif (pwin.mouse_mode == "Relative") then
+				iotbl.samples[1] = iotbl.samples[2];
+				iotbl.samples[2] = nil;
+			else -- Direct, do nothing with the samples
 			end
-
 		end
 	
 		target_input(pwin.controlid, iotbl);
