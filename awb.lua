@@ -706,6 +706,9 @@ end
 local exthandler = {
 	MP3 = amediahandler,
 	OGG = amediahandler,
+	FLAC = amediahandler,
+	M4A = amediahandler,
+	FLV = vmediahandler,
 	MKV = vmediahandler,
 	MOV = vmediahandler,
 	MP4 = vmediahandler,
