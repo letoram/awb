@@ -608,7 +608,7 @@ local function analog_kernelpop(wnd, btn)
 	awbwman_popup(vid, lines, function(ind)
 		wnd.kernel_sz = tonumber(list[ind]);
 			inputanalog_filter(wnd.dev, wnd.sub, wnd.deadzone, 
-				wnd.ubound, wnd.lbound, wnd.kernel_sz, wnd.mode);
+				wnd.lbound, wnd.ubound, wnd.kernel_sz, wnd.mode);
 		end, {ref = btn.vid});
 end
 
@@ -636,7 +636,7 @@ local function analog_filterpop(wnd, btn)
 	awbwman_popup(vid, lines, function(ind)
 		wnd.mode = list[ind];
 		inputanalog_filter(wnd.dev, wnd.sub, wnd.deadzone, 
-			wnd.ubound, wnd.lbound, wnd.kernel_sz, wnd.mode);
+			wnd.lbound, wnd.ubound, wnd.kernel_sz, wnd.mode);
 	end, {ref = btn.vid});
 end
 
@@ -703,7 +703,7 @@ local function update_window(dev, sub)
 			function(self)
 				awbwman_popupslider(0, wnd.deadzone, 10000, function(val)
 					inputanalog_filter(wnd.dev, wnd.sub, val, 
-						wnd.ubound, wnd.lbound, wnd.kernel_sz, wnd.mode);
+						wnd.lbound, wnd.ubound, wnd.kernel_sz, wnd.mode);
 					wnd:switch_device(wnd.dev, wnd.sub);
 				end, {ref = self.vid});
 		end)).vid] = MESSAGE["ANALOG_DEADZONE"];
@@ -711,7 +711,6 @@ local function update_window(dev, sub)
 		wnd.hoverlut[
 		(bar:add_icon("ubound", "l", cfg.bordericns["uparrow"],
 			function(self)
-				print("ubound:", wnd.ubound);
 				awbwman_popupslider(16536, wnd.ubound, 32767, function(val)
 					inputanalog_filter(wnd.dev, wnd.sub, wnd.deadzone, 
 						wnd.lbound, val, wnd.kernel_sz, wnd.mode);
@@ -722,7 +721,6 @@ local function update_window(dev, sub)
 		wnd.hoverlut[
 		(bar:add_icon("lbound", "l", cfg.bordericns["downarrow"],
 			function(self)
-				print("lbound:", wnd.lbound);
 				awbwman_popupslider(-16536, wnd.lbound, -32767, function(val)
 					inputanalog_filter(wnd.dev, wnd.sub, wnd.deadzone, 
 						val, wnd.ubound, wnd.kernel_sz, wnd.mode);
@@ -806,8 +804,8 @@ local function update_window(dev, sub)
 				local step = h / 65536;
 				resize_image(ubound, w, 2);
 				resize_image(lbound, w, 2);
-				move_image(ubound, 0, h * 0.5 + step * res.upper_bound);
-				move_image(lbound, 0, h * 0.5 + step * res.lower_bound);
+				move_image(ubound, 0, h * 0.5 - step * math.abs(res.upper_bound));
+				move_image(lbound, 0, h * 0.5 + step * math.abs(res.lower_bound));
 				if (res.deadzone == 0) then
 					hide_image(dzone);
 				else
@@ -820,6 +818,7 @@ local function update_window(dev, sub)
 
 			local flipped = awbwman_flipaxis(wnd.dev, wnd.sub, true);
 			image_shader(wnd.invertvid, flipped == true and "awb_selected" or "DEFAULT");
+			wnd:reposition();
 		end
 
 		wnd.ainput = function(self, iotbl)
