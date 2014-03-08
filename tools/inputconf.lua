@@ -898,7 +898,7 @@ function awb_inputed()
 
 	local list = {
 		{
-			cols    = {"New Layout..."},
+			cols    = {"\\#00ffaaNew Layout...\\#ffffff"},
 			trigger = function(self, wnd)
 				wnd:destroy(awbwman_cfg().animspeed);
 				local activetbl = {};
@@ -917,7 +917,7 @@ function awb_inputed()
 
 	if (#devtbl > 0) then
 		table.insert(list, {
-			cols = {"Analog Options..."},
+			cols = {"\\#00ffaaAnalog Options...\\#ffffff"},
 			trigger = function(self, wnd)
 				wnd:destroy(awbwman_cfg().animspeed);
 				inputed_anallay(devtbl);
@@ -926,7 +926,7 @@ function awb_inputed()
 	end
 
 	table.insert(list, {
-		cols = {"Re- scan Analog..."},
+		cols = {"\\#00ffaaRe- scan Analog...\\#ffffff"},
 			trigger = function(self, wnd)
 				inputanalog_query(0, 0, 1);
 				local x = wnd.x;

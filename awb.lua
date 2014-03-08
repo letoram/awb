@@ -22,9 +22,12 @@ ORDER_MOUSE     = 255;
 
 kbdbinds = {};
 
-function menulbl(text)
-return render_text(string.format("\\#0055a9\\f%s,%d %s", 
-deffont, deffont_sz, text));
+function menulbl(text, color)
+	if (color == nil) then
+		color = "\\#0055a9"
+	end
+	return render_text(string.format("\\#0055a9\\f%s,%d %s", 
+		deffont, deffont_sz, text));
 end
 
 function desktoplbl(text, len)

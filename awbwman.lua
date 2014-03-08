@@ -1001,6 +1001,14 @@ function awbwman_rootwnd()
 		end
 	};
 
+	if (DEBUGLEVEL > 1) then
+		table.insert(awblist, "Dump State");
+		table.insert(ftbl, function() 
+			zap_resource("state.dump"); 
+			system_snapshot("state.dump"); 
+		end);
+	end
+
 	local icn = tbar:add_icon("cap", "l", cap, function(self) 
 		local vid, list = awb_cfg.defrndfun(table.concat(awblist, [[\n\r]]));
 		awbwman_popup(vid, list, ftbl ,{ref = self.vid} )
@@ -2358,7 +2366,7 @@ function awbwman_loadanalog(inp)
 
 	for k, v in ipairs(t) do
 		inputanalog_filter(v.devid, v.subid, v.deadzone,
-			v.upper_bound, v.lower_bound, v.kernel_size, v.mode);
+			v.lower_bound, v.upper_bound, v.kernel_size, v.mode);
 	end
 end
 
