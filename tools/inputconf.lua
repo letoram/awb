@@ -87,6 +87,20 @@ local function set_tblfun(dst)
 	dst.ignore_modifiers = true;
 end
 
+local function pop_globtbl(tbl)
+	local nulstr = "translated:0:0:none";
+	tbl["ESCAPE"] = nulstr;
+	tbl["GATHER"] = nulstr;
+	tbl["MINIMIZE"] = nulstr;
+	tbl["SELECT"] = nulstr;
+	tbl["CONTEXT"] = nulstr;
+	tbl["CLOSE"] = nulstr;
+	tbl["LOCK"] = nulstr;
+	tbl["MAGNET"] = nulstr;
+	tbl["OSDKEYBOARD"] = nulstr;
+	tbl["CYCLE"] = nulstr;
+end
+
 local function pop_deftbl(tbl, pc, bc, ac, other)
 	local nulstr = "translated:0:0:none";
 

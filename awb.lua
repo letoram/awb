@@ -11,7 +11,7 @@ sysicons   = {};
 -- and then share_storage
 imagery    = {};
 colortable = {};
-
+minputtbl = {false, false, false};
 groupicn    = "awbicons/drawer.png";
 groupselicn = "awbicons/drawer_open.png";
 deffont     = "fonts/topaz8.ttf";
@@ -184,7 +184,12 @@ function awb()
 	local cursor = load_image("awbicons/mouse.png", ORDER_MOUSE);
 	image_tracetag(cursor, "mouse cursor");
 	mouse_setup(cursor, ORDER_MOUSE, 1, true);
-		
+	
+-- shutdown queued?
+	if (parse_commandline() == false) then
+		return;
+	end
+
 	load_aux(); -- support classes (awbwnd etc.)
 	awbwman_init(desktoplbl, menulbl);	
 
@@ -211,6 +216,91 @@ function awb()
 	end
 
 	awbwman_toggle_mousegrab();
+end
+
+function valid_adev(devnum)
+	local tbl = inputanalog_query();
+	local found = false;
+	local resstr = {"Unknown device id specified, valid values:"};
+	local devs = {};
+
+	for k,v in ipairs(tbl) do
+		if (not devs[v.devid]) then
+			devs[v.devid] = true;
+			table.insert(resstr, string.format("%d : %s", v.devid, v.label));
+		end
+
+		if (devnum == v.devid) then
+			return true;
+		end
+	end
+
+	shutdown(table.concat(resstr, "\n"));
+	return false;
+end
+
+function parse_commandline()
+
+	if arguments[1] == nil then
+		return;
+	end
+
+	if (arguments[1] == "help" or arguments[1] == "--help" or
+		arguments[1] == "-h") then
+		shutdown([[
+Arcan Workbench (AWB) command line options:
+	amouse_dev=devind simulate mouse using analog device
+	amouse_x=subid (if amouse_dev) axis to map to X
+	amouse_y=subid (if amouse_dev) axis to map to Y
+	amouse_btn=subid (if amouse_dev) button to map to LMB
+	amouse_xf=fact (if amouse_dev) scaling factor to X
+	amouse_yf=fact (if amouse_dev) scaling factor to Y
+]]);
+		return false;
+	end
+
+	local devtbl = {
+		dev = 64,
+		x = 0,
+		y = 1,
+		xf = 4.0,
+		yf = 4.0,
+		lmb = 0
+	};
+
+	for i=1, #arguments do
+		local v = string.split(arguments[i], "=");
+		local cmd = v[1] ~= nil and v[1] or "";
+		local val = v[2] ~= nil and v[2] or "";
+		local num = tonumber(val);
+
+		if (cmd == "amouse_dev" and num ~= nil) then 
+			if (valid_adev(num) == false) then
+				return false;
+			end
+
+			amouse_map = devtbl;
+		elseif (cmd == "amouse_x" and num ~= nil) then
+			devtbl.x = num;
+
+		elseif (cmd == "amouse_y" and num ~= nil) then
+			devtbl.y = num;
+
+		elseif (cmd == "amouse_btn" and num ~= nil) then
+			devtbl.lmb = num;
+
+		elseif (cmd == "amouse_xf" and num ~= nil) then
+			devtbl.xf = num;
+
+		elseif (cmd == "amouse_yf" and num ~= nil) then
+			devtbl.yf = num;
+
+		else
+			warning(string.format("unrecognized option: %s, ignored.", v[1]));
+		end
+	end
+
+	return true;
 end
 
 function dumpvid()
@@ -948,8 +1038,39 @@ function spawn_boing(caption)
 	return a;
 end
 
-minputtbl = {false, false, false};
+-- to control the cursor through another device
+function translate_adev(iotbl)
+	local cfg = awbwman_cfg(); 
+
+	if (iotbl.kind == "analog" and not cfg.mouse_focus) then
+		if (iotbl.subid == amouse_map.x) then
+			iotbl.source = "mouse";
+			mouse_state().tick_state = minputtbl; -- set this earlier 
+			mouse_state().tick_dx = iotbl.samples[1] / 32768.0 * amouse_map.xf;
+
+		elseif (iotbl.subid == amouse_map.y) then
+			mouse_state().tick_dy = iotbl.samples[1] / 32768.0 * amouse_map.yf;
+			iotbl.source = "mouse";
+		end
+	
+	elseif (iotbl.kind == "digital") then
+		if (iotbl.subid == amouse_map.lmb) then
+			minputtbl[1] = iotbl.active;
+			mouse_input(0, 0, minputtbl);
+		end
+	end
+
+	return iotbl;
+end
+
 function awb_input(iotbl)
+-- if not locked to a window, and enabled,
+-- map an analog device to emitt the same events as the mouse would
+
+	if (amouse_map and iotbl.devid == amouse_map.dev) then
+		iotbl = translate_adev(iotbl);
+	end
+	
 	if (iotbl.kind == "analog" and iotbl.source == "mouse") then
 		if (awbwman_minput(iotbl)) then
 			mouse_input(iotbl.subid == 0 and iotbl.samples[2] or 0, 
