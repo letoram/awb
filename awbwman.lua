@@ -888,6 +888,7 @@ function awbwman_dialog(caption, buttons, options, modal)
 		end
 	end
 
+	wnd:reposition();					
 	return wnd;
 end
 
@@ -999,6 +1000,14 @@ function awbwman_rootwnd()
 			awbwman_shutdown();
 		end
 	};
+
+	if (DEBUGLEVEL > 1) then
+		table.insert(awblist, "Dump State");
+		table.insert(ftbl, function() 
+			zap_resource("state.dump"); 
+			system_snapshot("state.dump"); 
+		end);
+	end
 
 	local icn = tbar:add_icon("cap", "l", cap, function(self) 
 		local vid, list = awb_cfg.defrndfun(table.concat(awblist, [[\n\r]]));
@@ -1166,7 +1175,8 @@ function awbwman_cancel()
 	elseif (awb_cfg.popup_active) then
 		drop_popup();
 	else
-		awbwman_confirm_dialog("Shutdown?", "shutdowndlg", shutdown, true);
+		awbwman_confirm_dialog("Shutdown?", "shutdowndlg", 
+			awbwman_shutdown, true);
 	end
 end
 
@@ -1769,6 +1779,15 @@ function awbwman_spawn(caption, options)
 	local canvas = fill_surface(wcont.w, wcont.h, r, g, b);
 	wcont:update_canvas(canvas);
 
+	wcont.reposition = function()
+		if (wcont.x + wcont.w > VRESW) then
+			wcont:move(VRESW - wcont.w, wcont.y);
+		end
+		if (wcont.y + wcont.h > VRESH) then
+			wcont:move(wcont.x, VRESH - wcont.y);
+		end
+	end
+
 -- top windowbar
 	local tbar = wcont:add_bar("t", awb_cfg.activeres,
 		awb_cfg.inactiveres, awb_cfg.topbar_sz, 
@@ -2347,7 +2366,7 @@ function awbwman_loadanalog(inp)
 
 	for k, v in ipairs(t) do
 		inputanalog_filter(v.devid, v.subid, v.deadzone,
-			v.upper_bound, v.lower_bound, v.kernel_size, v.mode);
+			v.lower_bound, v.upper_bound, v.kernel_size, v.mode);
 	end
 end
 
