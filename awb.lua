@@ -219,6 +219,9 @@ function awb()
 	end
 
 	awbwman_toggle_mousegrab();
+	if (target_alloc) then
+		setup_external_connections();
+	end
 end
 
 function valid_adev(devnum)
@@ -328,6 +331,11 @@ function map_inputs()
 		kbdbinds["F5"]     = function() print(current_context_usage()); end;
 		kbdbinds["F6"]     = debug.debug;
 		kbdbinds["F10"]    = mouse_dumphandlers;
+		kbdbinds["F8"]     = function()
+			local outp = fill_surface(VRESW, VRESH, 0, 0, 0, VRESW, VRESH);
+			define_recordtarget(outp, WORLDID, {}, "noaudio");
+		end
+
 		kbdbinds["F4"]     = function()
 			local newglob = {};
 
@@ -372,6 +380,26 @@ function gamelist_launch(self, factstr, coreargs)
 	end
 
 	targetwnd_setup(game, factstr, coreargs);
+end
+
+--
+-- A target alloc loop that maps external connections
+-- to target windows, re-using the same key.
+--
+function setup_external_connections()
+	local running = false;
+	local forward = function() end
+
+	target_alloc("awb", function(source, status)
+		if (not running) then
+			running = true;
+			forward = targetwnd_nonauth();
+			setup_external_connections();
+		end
+
+		forward(source, status);
+	end);
+
 end
 
 function launch_factorytgt(tbl, factstr, coreopts)
@@ -999,7 +1027,7 @@ function builtin_group(self, ofs, lim, desw, desh)
 		{"InputConf", awb_inputed, "inputed" },
 		{"Recorder",  spawn_vidrec, "vidrec" },
 		{"Compare",   spawn_vidcmp, "vidcmp" },
---	{"Network",   spawn_socsrv, "network"},
+		{"Network",   spawn_socsrv, "network"},
 		{"VidCap",    spawn_vidwin, "vidcap" },
 		{"HeightMap", spawn_hmap, "hghtmap"  }
 	};

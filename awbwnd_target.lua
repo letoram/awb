@@ -125,8 +125,11 @@ local function sysopt_sel(icn, wnd)
 
 	local lst = {
 		"Soft Reset",
-		"Hard Reset"
 	};
+	
+	if (wnd.external_source == nil) then
+		table.insert(lst, "Hard Reset");
+	end
 
 	local funtbl = {
 		function()
@@ -452,6 +455,7 @@ function awbtarget_settingswin(tgtwin)
 		return;
 	end
 
+	if (tgtwin.external_source == nil) then
 	newwnd.dir.t:add_icon("save", "l", awbwman_cfg().bordericns["save"], 
 		function(self)
 			local savetbl = {'Game Defaults', 'Target Defaults', 'Global Defaults'};
@@ -461,6 +465,7 @@ function awbtarget_settingswin(tgtwin)
 				end);
 		end
 	);
+	end
 
 	tgtwin:add_cascade(newwnd);
 end
@@ -1433,6 +1438,9 @@ function awbwnd_target(pwin, caps, factstr)
 
 		elseif (status.kind == "resized") then
 			pwin.mirrored = status.mirrored;
+			if (pwin.reca == nil) then
+				pwin.reca = status.source_audio;
+			end
 
 			if (pwin.updated == nil) then
 				pwin:update_canvas(source, pwin.mirrored);
@@ -1491,6 +1499,29 @@ function awbwnd_target(pwin, caps, factstr)
 	pwin.factorystr = awbtarget_factory;
 
 	return callback;
+end
+
+--
+-- For non-authoritative connections, we need to disable
+-- the factory, load/store semantics, etc.
+-- 
+function targetwnd_nonauth(source)
+	local wnd, cb = awbwman_targetwnd(
+		menulbl("Unknown"), {refid = "targetwnd_external"}, {} );
+		
+	if (wnd == nil) then
+		return;
+	end
+
+	wnd.controlid = source;
+	wnd.external_source = true;
+	wnd.gametbl = {
+		caption = "external",
+		icon = "external",
+		source = wnd 
+	};
+
+	return cb;
 end
 
 --

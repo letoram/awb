@@ -59,6 +59,41 @@ local function server_callback(source, msg)
 		
 end
 
+local function client_connection(dstwin, source, status)
+	
+end
+
+local function connectwin(pwin)
+	local buttontbl = {
+		{
+			caption = desktoplbl("Connect"), 
+			trigger = function(own)
+				pwin.connid = net_open(own.inputfield.msg, function(source, status)
+					client_connection(pwin, source, status);
+				end);
+				pwin:add_handler("on_destroy",
+					function(self)
+						if (valid_vid(pwin.connid)) then
+							delete_image(pwin.connid);
+						end
+					end
+				);
+			end
+		},
+		{
+			caption = desktoplbl("Cancel"),
+			trigger = function(own)
+			end
+		}
+	};
+				
+	local dlg = awbwman_dialog(desktoplbl("Connect To:"), buttontbl, {
+		input = { w = 100, h = 20, limit = 48, accept = 1, cancel = 2 }
+	}, false);
+
+	pwin:add_cascade(dlg);
+end
+
 local function serverwin(wnd)
 	if (wnd ~= nil) then 
 		wnd:destroy();
@@ -103,7 +138,7 @@ function spawn_socsrv()
 		menulbl(MESSAGE["TOOL_NETWORK"]), {refid = "network"});
 
 	local cfg = awbwman_cfg();
-	local bar = wnd:add_bar("tt", cfg.ttactiveres, cfg.ttinactiveres,
+	local bar = wnd:add_bar("tt", cfg.ttactiveres, cfg.ttinactvres,
 		wnd.dir.t.rsize, wnd.dir.t.bsize);
 
 	bar:add_icon("connectpop", "l", cfg.bordericns["settings"], function(self)
