@@ -112,11 +112,11 @@ cont.confwin = function(c, pwin)
 		{
 		name = "distance",
 		trigger = function(self, wnd)
-			stepfun_num(self, wnd, c, "dispdist", "distance", 
+			stepfun_num(self, wnd, c, "distance", "distance", 
 				"f", 0.6, 1.6, -0.1);
 		end,
 		rtrigger = function(self, wnd)
-			stepfun_num(self, wnd, c, "dispdist", "distance", 
+			stepfun_num(self, wnd, c, "distance", "distance", 
 				"f", 0.6, 1.6, 0.1);
 		end,
 		cols = {"Distance", tostring(c.distance)}
