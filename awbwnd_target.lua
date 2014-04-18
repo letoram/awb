@@ -171,6 +171,7 @@ local function inputlay_sel(icn, wnd)
 	local lst = inputed_configlist();
 	local lst2 = {};
 	table.insert(lst, 1, "Disable");
+	table.insert(lst, 1, "Raw");
 
 	for ind, val in ipairs(lst) do
 		if (val == wnd.inp_val) then
@@ -1368,11 +1369,11 @@ function awbwnd_target(pwin, caps, factstr)
 			if (pwin.mouse_mode == "Analog-Remap") then
 				iotbl.samples[2] = nil;
 				if (iotbl.subid == 0) then
-					iotbl.samples[1] = math.floor(
-						((iotbl.samples[1] / VRESW) - 0.5) * 32767);
+					iotbl.samples[1] = 
+						((iotbl.samples[1] / VRESW) - 0.5) * 32767;
 				else
-					iotbl.samples[1] = math.floor(
-						((iotbl.samples[1] / VRESH) - 0.5) * 32767);
+					iotbl.samples[1] = 
+						((iotbl.samples[1] / VRESH) - 0.5) * 32767;
 				end
 			elseif (pwin.mouse_mode == "Relative") then
 				iotbl.samples[1] = iotbl.samples[2];
@@ -1386,6 +1387,10 @@ function awbwnd_target(pwin, caps, factstr)
 
 	pwin.input = function(self, iotbl)
 		if (pwin.inp_cfg == nil) then
+			if (pwin.inp_cfg == "Raw") then
+				target_input(pwin.controlid, iotbl);
+			end
+	
 			return;
 		end
 	

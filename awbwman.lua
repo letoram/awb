@@ -191,17 +191,17 @@ function awbwman_fullscreen(wnd)
 	local dw, dh;
 
 	if (hr > wr) then
-		dw = math.floor(VRESH * ar);
+		dw = VRESH * ar;
 		dh = VRESH;
 	else
 		dw = VRESW;
-		dh = math.floor(VRESW / ar);
+		dh = VRESW / ar;
 	end
 
 	awb_cfg.focus:resize(dw, dh, true);
 
-	local xp = math.floor(0.5 * (VRESW - dw));
-	local yp = math.floor(0.5 * (VRESH - dh));
+	local xp = 0.5 * (VRESW - dw);
+	local yp = 0.5 * (VRESH - dh);
 
 -- setup intermediate representation
 	local vid = null_surface(dw, dh);
@@ -406,7 +406,7 @@ local function awbman_mhandlers(wnd, bar)
 			delete_image(self.lineobj);
 			self.lineobj = nil;
 		else
-			wnd:move(math.floor(wnd.x), math.floor(wnd.y));
+			wnd:move(wnd.x, wnd.y);
 		end
 	end
 
@@ -443,7 +443,7 @@ local function awbwman_addcaption(bar, caption)
 		props = image_surface_properties(caption);
 	end
 
-	icn.maxsz = math.floor(3 + props.width * 1.1);
+	icn.maxsz = 3 + props.width * 1.1;
 	resize_image(icn.vid, icn.maxsz, bar.size);
 
 	link_image(caption, icn.vid);
@@ -452,7 +452,7 @@ local function awbwman_addcaption(bar, caption)
 	order_image(caption, 1);
 	image_mask_set(caption, MASK_UNPICKABLE);
 	image_mask_set(icn.vid, MASK_UNPICKABLE);
-	move_image(caption, 2, 2 + math.floor(0.5 * (bar.size - props.height)));
+	move_image(caption, 2, 2 + 0.5 * (bar.size - props.height));
 	image_clip_on(caption, CLIP_SHALLOW);
 	bar.capvid = caption;
 	bar.bgvid = icn.vid;
@@ -747,8 +747,8 @@ function awbwman_dialog(caption, buttons, options, modal)
 -- Fit dialog to size of contents
 	local capp = image_surface_properties(caption);
 	local cpyofs = 0;
-	local bwidth  = math.floor(maxw * 1.2);
-	local bheight = math.floor(maxh * 1.1);
+	local bwidth  = maxw * 1.2;
+	local bheight = maxh * 1.1;
 	local wwidth  = (bwidth * #buttons + 20) > capp.width and 
 		(bwidth * #buttons + 20) or capp.width;
 	local wheight = bheight + capp.height + wnd.dir.t.size;
@@ -776,15 +776,14 @@ function awbwman_dialog(caption, buttons, options, modal)
 		end
 
 		move_image(wnd.inputfield.anchor, 
-			math.floor( 0.5 * (capp.width - options.input.w)), capp.height + 5);
+			0.5 * (capp.width - options.input.w), capp.height + 5);
 	end
 
 -- center
-	wnd:resize(math.floor(wwidth * 1.2), math.floor(wheight * 2));
+	wnd:resize(wwidth * 1.2, wheight * 2);
 
 	if (not options.nocenter) then
-		move_image(wnd.anchor, math.floor(0.5 * (VRESW - wnd.w)),
-			math.floor(0.5 * (VRESH - wnd.h)));
+		move_image(wnd.anchor, 0.5 * (VRESW - wnd.w), 0.5 * (VRESH - wnd.h));
 	end
 
 -- Link caption to window area, center (taking buttons into account)
@@ -798,8 +797,8 @@ function awbwman_dialog(caption, buttons, options, modal)
 		local props = image_surface_properties(capvid);
 		local cprop = image_surface_properties(self.canvas.vid);
 
-		move_image(capvid, math.floor(0.5 * (cprop.width - props.width)),
-			math.floor(0.5 * ( (cprop.height - bheight - 10) - props.height)));
+		move_image(capvid, 0.5 * (cprop.width - props.width),
+			0.5 * ( (cprop.height - bheight - 10) - props.height));
 	
 		image_mask_set(caption, MASK_UNPICKABLE);
 		link_image(capvid, self.canvas.vid);
@@ -809,8 +808,8 @@ function awbwman_dialog(caption, buttons, options, modal)
 	end
 
 	local wndprop = image_surface_properties(wnd.canvas.vid);
-	move_image(caption, math.floor(0.5 * (wndprop.width - capp.width)),
-		math.floor(0.5 * ((wndprop.height - bheight) - capp.height)) + cpyofs );
+	move_image(caption, 0.5 * (wndprop.width - capp.width),
+		0.5 * ((wndprop.height - bheight) - capp.height) + cpyofs );
 
 -- Generate buttons and link lifetime to parent (but track
 -- mouse handlers separately)
@@ -850,8 +849,8 @@ function awbwman_dialog(caption, buttons, options, modal)
 		move_image(button, 1, 1);
 		move_image(border, wndprop.width - i * (bwidth + 10), wndprop.height - 
 			bheight - 10);
-		move_image(v.caption, math.floor(0.5 * (bwidth - capp.width)),
-			math.floor(0.5 * (bheight - (capp.height - 4) )));
+		move_image(v.caption, 0.5 * (bwidth - capp.width), 
+			0.5 * (bheight - (capp.height - 4) ));
 
 		bevent.name = "awbdialog_button(" .. tostring(i) .. ")";
 		mouse_addlistener(bevent, {"over", "out", "click"});
@@ -1273,7 +1272,7 @@ local function awbwman_popupbase(props, options)
 	blend_image(border.anchor, 1.0, awb_cfg.animspeed);
 	blend_image(wnd, awb_cfg.bgopa);
 
-	move_image(border.anchor, math.floor(mx), math.floor(my));
+	move_image(border.anchor, mx, my);
 	move_image(wnd, 1, 1);
 
 	props.width = (options.minw and options.minw > props.width) and 
@@ -1415,7 +1414,7 @@ function awbwman_popupslider(min, val, max, updatefun, options)
 	local props  = {}; 
 	props.width  = (options and options.width ~= nil) and options.width or 15;
 	props.height = (options and options.height ~= nil) and
-		options.height or math.floor(VRESH * 0.1);
+		options.height or (VRESH * 0.1);
 
 	local border, wnd, options = awbwman_popupbase(props, options);
 	if (border == nil) then
@@ -1516,8 +1515,7 @@ function awbwman_setup_cursortag(icon)
 	image_sharestorage(icon, res.vid); 
 	link_image(res.vid, mouse_cursor());
 	blend_image(res.vid, 0.8, awb_cfg.animspeed);
-	move_image(res.vid, math.floor(icn_props.width * 0.5),
-		math.floor(icn_props.height * 0.5));
+	move_image(res.vid, icn_props.width * 0.5, icn_props.height * 0.5);
 	image_inherit_order(res.vid, true);
 
 	awb_cfg.cursor_tag = res;
@@ -1567,8 +1565,8 @@ function awbwman_rootaddicon(name, captionvid,
 	local val = get_key("rooticn_" .. name);
 	if (val ~= nil and val.nostore == nil) then
 		local a = string.split(val, ":");
-		icntbl.x = math.floor(VRESW * tonumber_rdx(a[1]));
-		icntbl.y = math.floor(VRESH * tonumber_rdx(a[2]));
+		icntbl.x = VRESW * tonumber_rdx(a[1]);
+		icntbl.y = VRESH * tonumber_rdx(a[2]);
 	end
 
 	icntbl.toggle = function(val)
@@ -1606,7 +1604,7 @@ function awbwman_rootaddicon(name, captionvid,
 	link_image(icntbl.anchor, awb_cfg.root.anchor);
 
 	icntbl.vid    = null_surface(icntbl.w, icntbl.h);
-	move_image(icntbl.vid, math.floor(0.5 * (awb_cfg.rootcell_w - icntbl.w)));	
+	move_image(icntbl.vid, 0.5 * (awb_cfg.rootcell_w - icntbl.w));	
 
 	image_sharestorage(iconvid, icntbl.vid);
 	resize_image(icntbl.vid, icntbl.w, icntbl.h);
@@ -1624,8 +1622,8 @@ function awbwman_rootaddicon(name, captionvid,
 		icntbl.caption = newvid;
 		blend_image(icntbl.caption, newopa);
 		link_image(icntbl.caption, icntbl.anchor);
-		move_image(icntbl.caption, math.floor( 0.5 * (awb_cfg.rootcell_w - 
-			image_surface_properties(icntbl.caption).width)), icntbl.h + 5);
+		move_image(icntbl.caption, 0.5 * (awb_cfg.rootcell_w - 
+			image_surface_properties(icntbl.caption).width), icntbl.h + 5);
 		order_image(icntbl.caption, 5);
 		blend_image(icntbl.caption, 1.0, awb_cfg.animspeed);
 	end
@@ -1666,8 +1664,8 @@ function awbwman_rootaddicon(name, captionvid,
 	end
 
 	ctable.drop = function(self, vid, dx, dy)
-		icntbl.x = math.floor(icntbl.x);
-		icntbl.y = math.floor(icntbl.y);
+		icntbl.x = icntbl.x;
+		icntbl.y = icntbl.y;
 		move_image(icntbl.anchor, icntbl.x, icntbl.y);
 	end
 
@@ -1716,9 +1714,9 @@ function awbwman_spawn(caption, options)
 				options[arg[1]] = tonumber_rdx(arg[2]);
 				if (options[arg[1]] ~= nil) then
 				if (arg[1] == "x" or arg[1] == "w") then
-					options[arg[1]] = math.floor(VRESW * options[arg[1]]);
+					options[arg[1]] = VRESW * options[arg[1]];
 				elseif (arg[1] == "y" or arg[1] == "h") then
-					options[arg[1]] = math.floor(VRESH * options[arg[1]]);
+					options[arg[1]] = VRESH * options[arg[1]];
 				end
 				end
 			end
@@ -1839,7 +1837,7 @@ function awbwman_spawn(caption, options)
 		end
 
 		rhandle.drop = function(self, vid)
-			wcont:resize(math.floor(wcont.w), math.floor(wcont.h), true);
+			wcont:resize(wcont.w, wcont.h, true);
 		end
 
 		rhandle.own = function(self, vid)
@@ -2047,7 +2045,7 @@ function awbwman_tablist_toggle(active, group)
 			if (wnd.active) then
 				awbwman_focus(wnd, false);
 				local dx, dy = mouse_xy();
-				wnd:move(math.floor(dx), math.floor(dy), awb_cfg.animspeed);
+				wnd:move(dx, dy, awb_cfg.animspeed);
 			end			
 
 			awb_cfg.tablist_toggle = nil;

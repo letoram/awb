@@ -357,8 +357,8 @@ local function awbbar_resize(self, neww, newh)
 	local lofs = 0;
 	for i=1,#self.left do
 		local w, h = self.rzfun(self.left[i].vid, self.size, self.vertical);
-		move_image(self.left[i].vid, math.floor(self.left[i].xofs + stepx * lofs), 
-			math.floor(self.left[i].yofs + stepy * lofs)); 
+		move_image(self.left[i].vid, self.left[i].xofs + stepx * lofs, 
+				self.left[i].yofs + stepy * lofs); 
 		lofs = lofs + w + self.left[i].xofs + self.spacing;
 		lim = lim - w;
 	end
@@ -368,8 +368,8 @@ local function awbbar_resize(self, neww, newh)
 		local w, h = self.rzfun(self.right[i].vid, self.size, self.vertical);
 		rofs = rofs + w;
 
-		move_image(self.right[i].vid, math.floor(stepx * (self.w - rofs)), 
-			math.floor(stepy * (self.h - rofs)));
+		move_image(self.right[i].vid, 
+			stepx * (self.w - rofs), stepy * (self.h - rofs));
 
 		lim = lim - w;
 	end
@@ -1040,10 +1040,10 @@ function awbwnd_create(options)
     update_canvas = awbwnd_update_canvas,
 
 -- defaults 
-   w           = math.floor(VRESW * 0.3),
-   h           = math.floor(VRESH * 0.3),
-	 x           = math.floor(0.5 * (VRESW - (VRESW * 0.3)));
-	 y           = math.floor(0.5 * (VRESH - (VRESH * 0.3)));
+   w           = VRESW * 0.3,
+   h           = VRESH * 0.3,
+	 x           = 0.5 * (VRESW - (VRESW * 0.3));
+	 y           = 0.5 * (VRESH - (VRESH * 0.3));
 	 canvasw     = 1,
 	 canvash     = 1,
 	 canvasx     = 0,

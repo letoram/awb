@@ -707,8 +707,8 @@ function add_shortcut(dst, ctag)
 			);
 
 			local mx, my = mouse_xy();
-			icn.x = math.floor(mx);
-			icn.y = math.floor(my);
+			icn.x = mx;
+			icn.y = my; 
 			move_image(icn.anchor, icn.x, icn.y);
 		end
 	end

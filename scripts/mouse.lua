@@ -51,7 +51,9 @@ local function mouse_cursorupd(x, y)
 	mstate.y = mstate.y < 0 and 0 or mstate.y;
 	mstate.x = mstate.x > VRESW and VRESW-1 or mstate.x; 
 	mstate.y = mstate.y > VRESH and VRESH-1 or mstate.y; 
-	
+	mstate.x = math.floor(0.5 + mstate.x);
+	mstate.y = math.floor(0.5 + mstate.y);
+
 	move_image(mstate.cursor, mstate.x + mstate.x_ofs, 
 		mstate.y + mstate.y_ofs);
 	return (mstate.x - lmx), (mstate.y - lmy);
@@ -145,8 +147,8 @@ end
 --
 function mouse_setup(cvid, clayer, pickdepth, cachepick)
 	mstate.cursor = cvid; 
-	mstate.x = math.floor(VRESW * 0.5);
-	mstate.y = math.floor(VRESH * 0.5);
+	mstate.x = VRESW * 0.5;
+	mstate.y = VRESH * 0.5;
 	show_image(cvid);
 	move_image(cvid, mstate.x, mstate.y);
 	mstate.pickdepth = pickdepth;
@@ -173,8 +175,7 @@ function mouse_absinput(x, y, state)
 end
 
 function mouse_xy()
-	local props = image_surface_resolve_properties(mstate.cursor);
-	return props.x, props.y;
+	return mstate.x, mstate.y;
 end
 
 local function mouse_drag(x, y)
