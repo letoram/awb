@@ -495,9 +495,6 @@ local function vmedia_callback(pwin, source, status)
 	end
 
 	if (status.kind == "resized") then
-		local vid, aud = play_movie(source);
-		pwin.recv = aud;
-					
 		pwin:set_mvol(pwin.mediavol);
 		local tbl = image_surface_properties(pwin.anchor);
 

@@ -187,7 +187,8 @@ function awb()
 	local cursor = load_image("awbicons/mouse.png", ORDER_MOUSE);
 	image_tracetag(cursor, "mouse cursor");
 	mouse_setup(cursor, ORDER_MOUSE, 1, true);
-	
+	mouse_state().autohide = true;
+
 -- shutdown queued?
 	if (parse_commandline() == false) then
 		return;
@@ -218,7 +219,7 @@ function awb()
 		delete_image(img);	
 	end
 
-	awbwman_toggle_mousegrab();
+--	awbwman_toggle_mousegrab();
 	if (target_alloc) then
 		setup_external_connections();
 	end
@@ -814,7 +815,9 @@ end
 local function vmediahandler(path, base, ext)
 	local name = path .. "/" .. base .. "." .. ext;
 	local wnd, tfun = awbwman_mediawnd(menulbl("Media Player"));
-	load_movie(name, FRAMESERVER_NOLOOP, tfun);
+	local vid, aid = load_movie(name, FRAMESERVER_NOLOOP, tfun);
+	wnd.controlid = vid;
+	wnd.recv = aid;
 	wnd.name = base; 
 end
 
@@ -1049,21 +1052,25 @@ function builtin_group(self, ofs, lim, desw, desh)
 end
 
 function system_group(self, ofs, lim, desw, desh)
-	local targets = list_targets();
+	if (system_group_last == nil or CLOCK - system_group_last > 1000) then
+		system_group_last = CLOCK;
+		system_group_targets = list_targets();
+	end
+
 	local restbl = {};
 
 	lim = lim + ofs;
-	while ofs <= lim and ofs <= #targets do
+	while ofs <= lim and ofs <= #system_group_targets do
 		local newtbl = {};
-		newtbl.caption = desktoplbl(targets[ofs]);
+		newtbl.caption = desktoplbl(system_group_targets[ofs]);
 		newtbl.trigger = gamelist_wnd;
-		newtbl.name    = targets[ofs];
+		newtbl.name    = system_group_targets[ofs];
 		newtbl.icon    = sysicons.lru_cache:get(newtbl.name).icon;
 		table.insert(restbl, newtbl);
 		ofs = ofs + 1;
 	end
 	
-	return restbl, #targets;
+	return restbl, #system_group_targets;
 end
 
 --
