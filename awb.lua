@@ -153,6 +153,7 @@ function load_aux()
  	system_load("tools/vidcmp.lua")();
  	system_load("tools/hghtmap.lua")();
 	system_load("tools/socsrv.lua")();
+	system_load("tools/vnc.lua")();
 end
 
 function awb()
@@ -1031,6 +1032,7 @@ function builtin_group(self, ofs, lim, desw, desh)
 		{"Recorder",  spawn_vidrec, "vidrec" },
 		{"Compare",   spawn_vidcmp, "vidcmp" },
 		{"Network",   spawn_socsrv, "network"},
+		{"VNC client",spawn_vncclient, "vnc" },
 		{"VidCap",    spawn_vidwin, "vidcap" },
 		{"HeightMap", spawn_hmap, "hghtmap"  }
 	};

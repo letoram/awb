@@ -133,7 +133,7 @@ local function sysopt_sel(icn, wnd)
 
 	local funtbl = {
 		function()
-			reset_target(wnd.controlid);
+			reset_target(wnd.recv);
 		end,
 
 		function()
@@ -284,7 +284,7 @@ function awbtarget_settingswin(tgtwin)
 		name = "graphdbg",
 		trigger = function(self, wnd)
 			tgtwin.graphdbg = not tgtwin.graphdbg;
-			target_graphmode(tgtwin.controlid, tgtwin.graphdbg == true and 1 or 0);
+			target_graphmode(tgtwin.recv, tgtwin.graphdbg == true and 1 or 0);
 			self.cols[2] = tostring(tgtwin.graphdbg);
 			wnd:force_update();
 		end,
@@ -494,7 +494,7 @@ function awbtarget_listsnaps(tgtwin, gametbl)
 					table.insert(res, {
 						name = base[i],
 						trigger = function() 
-							restore_target(tgtwin.controlid, base[i]);
+							restore_target(tgtwin.recv, base[i]);
 							tgtwin.laststate = string.sub(base[i], #tgtwin.snap_prefix+1);
 						end, 
 						name = base[i],
@@ -525,7 +525,7 @@ local function awbtarget_save(pwin, res)
 
 		pwin:add_cascade(dlg);
 	else
-		snapshot_target(pwin.controlid, pwin.snap_prefix .. res);
+		snapshot_target(pwin.recv, pwin.snap_prefix .. res);
 		pwin.laststate = res; 
 	end
 end
@@ -884,7 +884,7 @@ local function factrest(wnd, str)
 
 			elseif (opts[1] == "statectl") then
 				wnd.laststate = string.sub(opts[2], #wnd.snap_prefix+1);
-				restore_target(wnd.controlid, opts[2]); 
+				restore_target(wnd.recv, opts[2]); 
 					
 -- rest, send to parent (mediawnd) and have it rebuild chain
 			else
@@ -966,7 +966,7 @@ local function gen_factorystr(wnd)
 end
 
 local function setcoreopt(wnd, key, value)
-	target_coreopt(wnd.controlid, 
+	target_coreopt(wnd.recv, 
 		wnd.coreopts[key].num, value);
 
 -- for hard reset
@@ -1085,14 +1085,14 @@ local tgtwnd_mappings = {};
 tgtwnd_mappings["QUICKSAVE"] = function(wnd, iotbl)
 	if (iotbl.active) then
 		local fname = wnd.snap_prefix .. "quick"; 
-		snapshot_target(wnd.controlid, fname);
+		snapshot_target(wnd.recv, fname);
 	end
 end
 
 tgtwnd_mappings["QUICKLOAD"] = function(wnd, iotbl)
 	if (iotbl.active) then
 		local fname = wnd.snap_prefix .. "quick"; 
-		restore_target(wnd.controlid, fname);
+		restore_target(wnd.recv, fname);
 	end
 end
 
@@ -1105,7 +1105,7 @@ tgtwnd_mappings["FASTFORWARD"] = function(wnd, iotbl)
 		skipmode = 10; 
 	end
 
-	target_framemode(wnd.controlid, skipmode, 
+	target_framemode(wnd.recv, skipmode, 
 		wnd.framealign, wnd.preaud, wnd.jitterstep, wnd.jitterxfer);
 end
 
@@ -1196,9 +1196,10 @@ function awbwnd_target(pwin, caps, factstr)
 			end
 		end
 
-		if (valid_vid(pwin.controlid)) then
-			delete_image(pwin.controlid);
+		if (valid_vid(pwin.recv)) then
+			delete_image(pwin.recv);
 			pwin.controlid = nil;
+			pwin.recv = nil;
 		end
 	end);
 
@@ -1207,22 +1208,22 @@ function awbwnd_target(pwin, caps, factstr)
 		if (req ~= nil) then
 			val = req;
 		end
-		target_framemode(self.controlid, val, self.framealign, self.preaud,
+		target_framemode(self.recv, val, self.framealign, self.preaud,
 			self.jitterstep, self.jitterxfer);
 	end
 
 	pwin.set_ntscflt = function(self)
 		if (self.ntsc_state) then
-			target_postfilter_args(pwin.controlid, 1, 
+			target_postfilter_args(pwin.recv, 1, 
 				pwin.ntsc_hue, pwin.ntsc_saturation, pwin.ntsc_contrast);
-			target_postfilter_args(pwin.controlid, 2, 
+			target_postfilter_args(pwin.recv, 2, 
 				pwin.ntsc_brightness, pwin.ntsc_gamma, pwin.ntsc_sharpness);
-			target_postfilter_args(pwin.controlid, 3, 
+			target_postfilter_args(pwin.recv, 3, 
 				pwin.ntsc_resolution, pwin.ntsc_artifacts, pwin.ntsc_bleed);
-			target_postfilter_args(pwin.controlid, 4, pwin.ntsc_fringing);
-			target_postfilter(pwin.controlid, POSTFILTER_NTSC);
+			target_postfilter_args(pwin.recv, 4, pwin.ntsc_fringing);
+			target_postfilter(pwin.recv, POSTFILTER_NTSC);
 		else
-			target_postfilter(pwin.controlid, POSTFILTER_OFF);
+			target_postfilter(pwin.recv, POSTFILTER_OFF);
 		end
 	end
 
@@ -1277,12 +1278,12 @@ function awbwnd_target(pwin, caps, factstr)
 		if (pwin.paused or pwin.ffstate ~= nil) then
 			pwin.paused = nil;
 			pwin.ffstate = nil;
-			resume_target(pwin.controlid);
+			resume_target(pwin.recv);
 			pwin:set_frameskip();
 			image_sharestorage(cfg.bordericns["pause"], self.vid);
 		else
 			pwin.paused = true;
-			suspend_target(pwin.controlid);
+			suspend_target(pwin.recv);
 			image_sharestorage(cfg.bordericns["play"], self.vid);
 		end
 	end);
@@ -1331,10 +1332,6 @@ function awbwnd_target(pwin, caps, factstr)
 
 -- Forced remapping of mouse in / out 
 	pwin.minput = function(self, iotbl, focused)
-		if (pwin.controlid == nil) then
-			return;
-		end
-
 		if (iotbl.kind == "digital") then
 			if (iotbl.subid == 0) then
 				iotbl.label = string.format("PLAYER%d_BUTTON%d", 
@@ -1382,13 +1379,13 @@ function awbwnd_target(pwin, caps, factstr)
 			end
 		end
 	
-		target_input(pwin.controlid, iotbl);
+		target_input(pwin.recv, iotbl);
 	end
 
 	pwin.input = function(self, iotbl)
 		if (pwin.inp_cfg == nil) then
 			if (pwin.inp_cfg == "Raw") then
-				target_input(pwin.controlid, iotbl);
+				target_input(pwin.recv, iotbl);
 			end
 	
 			return;
@@ -1403,13 +1400,13 @@ function awbwnd_target(pwin, caps, factstr)
 	
 -- LEFT :- rel.right + push.left etc.
 				if (pwin.reset_opposing) then
-					reset_opposing(pwin.controlid, v);
+					reset_opposing(pwin.recv, v);
 				end
 
-				target_input(pwin.controlid, v);
+				target_input(pwin.recv, v);
 			end
 		else -- hope that the hijacked target can do something with it anyway
-			target_input(pwin.controlid, iotbl);
+			target_input(pwin.recv, iotbl);
 		end
 	end
 
@@ -1497,7 +1494,7 @@ function awbwnd_target(pwin, caps, factstr)
 	table.insert(pwin.handlers, canvash);
 
 	pwin.canvas_iprops = function(self)
-		return image_surface_initial_properties(self.controlid);
+		return image_surface_initial_properties(self.recv);
 	end
 
 	pwin:update_canvas( fill_surface(pwin.w, pwin.h, 100, 100, 100) );
@@ -1518,6 +1515,7 @@ function targetwnd_nonauth(source)
 		return;
 	end
 
+	wnd.recv = source;
 	wnd.controlid = source;
 	wnd.external_source = true;
 	wnd.gametbl = {
