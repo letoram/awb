@@ -643,7 +643,6 @@ local function awbwnd_update_canvas(self, vid, mirrored)
 		return vid == self.vid;
 	end
 
-
 	local oldcanvas = self.canvas;
 	self.canvas = canvastbl;
 	image_tracetag(vid, "awbwnd(" .. self.name ..").canvas");
@@ -652,6 +651,8 @@ local function awbwnd_update_canvas(self, vid, mirrored)
 		oldcanvas.vid ~= vid) then
 		delete_image(oldcanvas.vid);
 	end
+
+	local props = image_surface_properties(vid);
 end
 
 local function awbwnd_active(self)

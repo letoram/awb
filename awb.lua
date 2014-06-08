@@ -88,15 +88,21 @@ end
 debug_global = {};
 
 local function shortcut_str(caption, state)
-	return string.format(
-		"local res = {};\nres.name=[[%s]];\n" ..
-		"res.caption=[[%s]];\nres.icon=[[%s]];\n" ..
-		"res.factorystr = [[%s]];\n" .. 
-		"%s\n" .. 
-		"\nreturn res;", state.name,
-		caption, state.icon and state.icon or "default", 
-		state.factorystr ~= nil and state.factorystr or state.factory,
-		state.shortcut_trig ~= nil and state.shortcut_trig() or "");
+	local res = {};
+
+	table.insert(res, string.format(
+		"local res = {};\nres.name=%q;\n" ..
+		"res.caption=%q;\nres.icon=%q;\n" ..
+		"res.factorystr = %q;\n", state.name, caption, 
+			state.icon and state.icon or "default", 
+			state.factorystr ~= nil and state.factorystr or state.factory));
+
+	if (state.shortcut_trig) then
+		table.insert(res, state.shortcut_trig());
+	end
+
+	table.insert(res, "return res;");
+	return table.concat(res, "\n");
 end
 
 function shortcut_popup(icn, tbl, name)
@@ -116,6 +122,7 @@ function shortcut_popup(icn, tbl, name)
 						open_rawresource("shortcuts/" .. name);
 						write_rawresource(shortcut_str(own.inputfield.msg, state));
 					close_rawresource();
+					icn:set_caption(desktoplbl(own.inputfield.msg));
 				end
 				},
 				{ caption = desktoplbl("Cancel"), trigger = function(own) end }
@@ -188,7 +195,6 @@ function awb()
 	local cursor = load_image("awbicons/mouse.png", ORDER_MOUSE);
 	image_tracetag(cursor, "mouse cursor");
 	mouse_setup(cursor, ORDER_MOUSE, 1, true);
-	mouse_state().autohide = true;
 
 -- shutdown queued?
 	if (parse_commandline() == false) then
@@ -408,6 +414,14 @@ function launch_factorytgt(tbl, factstr, coreopts)
 	local lines  = string.split(factstr, "\n");
 	local idline = lines[1];
 	local idval  = tonumber(string.split(idline, "=")[2]);
+
+	if (tbl.kind ~= nil and tbl.kind == "tool") then
+		if (tbl.type == "vnc_client") then
+			spawn_vncclient(tbl, factstr);
+		end
+
+		return;
+	end
 
 	local tbl = { tag = game_info(idval) };
 	if (tbl ~= nil) then
@@ -689,8 +703,13 @@ function add_shortcut(dst, ctag)
 		return false;
 	end
 
-	if (not awbwman_rootgeticon(base)) then
-		local tbl = system_load(line)();
+	if (not awbwman_rootgeticon(dst)) then
+		local res = system_load(line, 0);
+		if (res == nil) then
+			return;
+		end
+
+		local tbl = res();
 
 		if (tbl ~= nil and 
 			tbl.factorystr and 
@@ -703,7 +722,7 @@ function add_shortcut(dst, ctag)
 					launch_factorytgt(tbl, tbl.factorystr); 
 				end, 
 				function(self) 
-					shortcut_popup(self, tbl, base .. ".lnk");	
+					shortcut_popup(self, tbl, dst .. ".lnk");	
 				end,
 				{w = w, h = h, helper = tbl.caption}
 			);

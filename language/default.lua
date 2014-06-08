@@ -28,7 +28,10 @@ return {
 	HOVER_SHUFFLE = "Randomize Playlist",
 	HOVER_SORTAZ = "Sort Ascending",
 	HOVER_SORTZA = "Sort Descending",
-
+	HOVER_CURSORHIDE = "Hide Local Cursor",
+	HOVER_CURSORSHOW = "Show Local Cursor",
+	HOVER_SPECIALKEY = "Special key sequences",
+	HOVER_PERFORMANCE = "Performance / Bandwidth Tuning",
 	ANALOG_FILTERMODE = "Switch Filtering Mode",
 	ANALOG_KERNELSIZE = "Set Filter-kernel Size",
 	ANALOG_DEADZONE   = "Grow / Shrink Deadzone",
@@ -54,6 +57,8 @@ return {
 	TOOL_NETWORK_SERVER = "Network Server",
 	TOOL_NETWORK_CLIENT = "Network Client",
 	TOOL_NETWORK_BROWSER = "Network Browser",
+	TOOL_VNCCLIENT = "VNC Client",
+	TOOL_VNCSERVER = "VNC Server", 
 
 	NET_CONNECT  = "Connect to...",
 	NET_DISCOVER = "Local Discovery",

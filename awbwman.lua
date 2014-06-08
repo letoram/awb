@@ -210,6 +210,8 @@ function awbwman_fullscreen(wnd)
 	move_image(vid, xp, yp);
 	show_image(vid);
 	order_image(vid, max_current_image_order());
+		
+	wnd.in_fullscreen = true;
 	if (wnd.on_fullscreen) then
 		wnd:on_fullscreen(vid, true);
 	end
@@ -237,6 +239,7 @@ function awbwman_dropfullscreen()
 
 	awb_cfg.focus:resize(w, h, true);
 		
+	awb_cfg.fullscreen.wnd.in_fullscreen = nil;
 	if (awb_cfg.fullscreen.wnd.on_fullscreen) then
 		awb_cfg.fullscreen.wnd:on_fullscreen(vid, false);
 	end
@@ -250,7 +253,7 @@ end
 
 function awbwman_shadow_nonfocus()
 	if (awb_cfg.focus_locked == false and awb_cfg.focus == nil or
-		awb_cfg.modal) then
+		awb_cfg.modal or (awb_cfg.focus and awb_cfg.focus.in_fullscreen)) then
 		return;
 	end
 
@@ -459,7 +462,7 @@ local function awbwman_addcaption(bar, caption)
 end
 
 function awbwman_gather_scatter()
-	if (awb_cfg.modal) then
+	if (awb_cfg.modal or (awb_cfg.focus and awb_cfg.focus.in_fullscreen)) then
 		return;
 	end
 
@@ -874,6 +877,7 @@ function awbwman_dialog(caption, buttons, options, modal)
 -- Need to be first in the on_destroy chain to manage a. modal dialogs,
 -- b. windows that need some kind of confirmation before being destroyed
 -- as there might be unsaved state that will be lost
+-- c. the special "exclusive input" mode
 --
 	wnd.on_destroy = function()
 		if (wnd.confirm_destroy ~= nil) then
@@ -2499,6 +2503,10 @@ function awbwman_init(defrndr, mnurndr)
 	awb_cfg.bordericns["mouse"]       = load_image("awbicons/topbar_mouse.png");
 	awb_cfg.bordericns["mouselock"]   = load_image("awbicons/topbar_mouselock.png");
 	awb_cfg.bordericns["search"]      = load_image("awbicons/topbar_search.png");
+	awb_cfg.bordericns["show_cursor"] = load_image("awbicons/show_cursor.png");
+	awb_cfg.bordericns["hide_cursor"] = load_image("awbicons/hide_cursor.png");
+	awb_cfg.bordericns["connect"]     = load_image("awbicons/connect.png");
+	awb_cfg.bordericns["special_key"] = load_image("awbicons/special_key.png");
 
 	for k,v in pairs(awb_cfg.bordericns) do
 		image_pushasynch(v);

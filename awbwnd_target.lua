@@ -991,7 +991,7 @@ local function datashare(wnd)
 		if (wnd.coreopts) then
 		for k,v in pairs(wnd.coreopts) do
 			if (v.value ~= nil) then
-				table.insert(lines, string.format("res.coreopts[\"%s\"] = [[%s]];\n", 
+				table.insert(lines, string.format("res.coreopts[%q] = %q;\n", 
 					v.key, v.value));
 			end
 		end

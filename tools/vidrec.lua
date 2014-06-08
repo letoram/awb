@@ -819,7 +819,6 @@ function spawn_vidrec()
 	end
 	bar.name = "vidrec_ttbar";
 	mouse_addlistener(bar, {"click", "hover"});
-	table.insert(wnd.handlers, bar);
 
 	wnd:update_canvas(fill_surface(32, 32, 60, 60, 60) ); 
 
