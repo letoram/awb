@@ -1,7 +1,15 @@
 --
--- Recorder Built-in Tool
--- Some regular configuration popups, e.g. resolution, framerate, 
--- and a drag-n-drop composition canvas
+-- Built-in tool for recording/streaming/remote control
+--
+-- [a] A drag-n-drop style canvas for 
+--     attaching / removing / manipulating inputs
+--
+-- [b] (optional) input translation for incoming events
+--     that translates/forwards to their respective parent windows
+--
+-- Missing:
+--  * Mapping VNC support to UI rather than hardcode
+--  * Record WORLDID and support global input injection
 --
 
 local function sweepcmp(vid, tbl)
@@ -152,8 +160,8 @@ local function add_rectarget(wnd, tag)
 	source.vid   = null_surface(tmpw, tmph);
 	source.own   = function(self, vid) return vid == source.vid; end
 	source.drag  = function(self, vid, dx, dy)
-		wnd:focus();
-		source.name  = tag.name;
+	wnd:focus();
+	source.name  = tag.name;
 
 --
 -- Add mouse handlers for moving / scaling, which one it'll be depends
@@ -468,6 +476,28 @@ local function audiopop(icn)
 	awbwman_popup(vid, lines, trigtbl, {ref = icn.vid});
 end
 
+local function listenpop(icn)
+	local wnd = icn.parent.parent;
+	local lst = {
+		"Listen..."
+	};
+
+	local buttontbl = {
+		{
+			caption = desktoplbl("OK"),
+			trigger = function(own)
+				wnd:set_destination(own.inputfield.msg);
+			end
+		},
+		{
+			caption = desktoplbl("Cancel"),
+			trigger = function(own)
+			end
+		}
+	};
+
+end
+
 local function destpop(icn)
 	local wnd = icn.parent.parent;
 	local buttontbl = {
@@ -545,6 +575,130 @@ local function getasp(str)
 	return res;
 end
 
+local vnc_btbl = {
+	"button_1",
+	"button_2",
+	"button_3",
+	"button_4",
+	"button_5"
+};
+
+local function vnc_mouseinput(recv, outdata, indata)
+-- motion
+	local recv = recv.source;
+
+	if (outdata.x ~= indata.x or outdata.y ~= indata.y) then
+		if (recv and recv.ainput) then
+			local tbl = {
+				devid = 0,
+				subid = 0,
+				gotrel = true,
+				kind = "analog",
+				source = "mouse",	
+				samples = {indata.x, indata.x - outdata.x}
+				};
+			tbl.subid = 1;
+			recv:ainput(tbl);
+			tbl.samples[1] = indata.y;
+			tbl.samples[2] = indata.y - outdata.y;
+			recv:ainput(tbl);
+		end
+	
+		outdata.x = indata.x;
+		outdata.y = indata.y;
+	end
+
+-- buttons, vnc_btbl can be used as filter
+	for k,v in ipairs(vnc_btbl) do
+		if (outdata[v] ~= indata[v]) then
+			local tbl = {
+				devid = 0,
+				subid = k,
+				kind = "digital",
+				source = "mouse",
+				active = indata[v]
+			};
+
+			outdata[v] = indata[v];
+			if (recv and recv.input) then
+				recv:input(tbl);
+			end
+
+		end
+	end
+end
+
+local function vnc_newcl(wnd, id)
+	local rtbl = {
+		x = 0,
+		y = 0
+	};
+
+	for i,v in ipairs(vnc_btbl) do
+		rtbl[v] = false;
+	end
+	
+	for k,v in ipairs(wnd.wndset) do
+		if (v.source and v.source.alive) then
+			rtbl.last_wnd = v;
+			break;
+		end
+	end
+
+	wnd.clients[ id ] = rtbl; 
+end
+
+local function vnc_input(wnd, src, status)
+	if (status.kind == "cursor_input") then
+		if (wnd.clients[status.id] == nil) then
+			vnc_newcl(wnd, status.id);
+		end
+	
+-- don't support overlap / order, seems like there's no point
+-- focus follows mouse
+		for k,v in ipairs(wnd.wndset) do
+			if (v.source and v.source.alive) then
+				local srcwnd = v.source;
+				wnd.clients[status.id].last_wnd = v;
+				break;
+			end
+		end
+
+-- split into motion + possible button changes
+		local dstwin = wnd.clients[status.id].last_wnd;
+		vnc_mouseinput(dstwin, wnd.clients[status.id], status);
+
+	elseif (status.kind == "key_input") then
+		if (wnd.clients[status.id] == nil) then
+			vnc_newcl(wnd, status.id);
+		end
+
+		local dstwin = wnd.clients[status.id].last_wnd;
+
+		if (dstwin and dstwin.source.alive and dstwin.source.input) then
+			local tbl = {
+				devid = 0,
+				translated = true,
+				keysym = status.keysym,
+				modifiers = status.modifiers,
+				active = status.active,
+				kind = "digital",
+				source = "keyboard"
+			};
+
+			dstwin.source:input(tbl);
+		end
+
+	else
+-- messages about connection / disconnection, ...
+		print(status.kind);
+	end
+end
+
+local function enableremote(wnd)
+
+end
+
 local function record(wnd)
 -- detach all objects, use video recording surface as canvas
 	local aspf = getasp(wnd.aspect);
@@ -594,6 +748,8 @@ local function record(wnd)
 	end
 	
 	local vidset = {};
+	wnd.wndset = {};
+
 	local baseprop = image_surface_properties(wnd.canvas.vid);
 
 -- translate each surface and add to the final recordset,
@@ -609,16 +765,26 @@ local function record(wnd)
 			local rely = math.ceil(props.y / baseprop.height * height);
 			resize_image(j.vid, relw, relh);
 			move_image(j.vid, relx, rely);
+			local went = {
+				source = j.data,
+				w = relw,
+				h = relh,
+				x = relx,
+				y = rely
+			};
+			table.insert(wnd.wndset, went);
 		end
 	end
 
 	local dstvid = fill_surface(width, height, 0, 0, 0, width, height);
-	define_recordtarget(dstvid, wnd.destination, fmtstr, vidset, asources,
+	define_recordtarget(dstvid, wnd.destination, 
+		"protocol=vnc:port=50000:" .. fmtstr, vidset, asources,
 		RENDERTARGET_DETACH, RENDERTARGET_NOSCALE, 
-		tonumber(wnd.fps) > 30 and -1 or -2, 
+		tonumber(wnd.fps) > 30 and -1 or -2,
 			function(src, status)
-		end
-	);
+				vnc_input(wnd, src, status);
+			end
+		);
 
 -- set the channel weights based on icon positions 
 -- (if we're not capturing globally) 
@@ -668,8 +834,15 @@ local function save_settings(wnd)
 	
 end
 
-function spawn_vidrec()
-	local wnd = awbwman_spawn(menulbl("Recorder"), {refid = "vidrec"});
+function spawn_vidrec(use_remoting)
+	local wnd;
+
+	if (use_remoting) then
+		wnd = awbwman_spawn(menulbl("Desktop Sharing"), {refid = "vidrem"});
+	else
+		wnd = awbwman_spawn(menulbl("Recorder"), {refid = "vidrec"});
+	end
+
 	wnd.hoverlut = {};
 
 	if (wnd == nil) then 
@@ -692,6 +865,7 @@ function spawn_vidrec()
 	
 	wnd.sources = {};
 	wnd.asources = {};
+	wnd.clients = {};
 
 	wnd.helpmsg = MESSAGE["HELP_VIDREC"];
 	load_settings(wnd);
@@ -767,44 +941,64 @@ function spawn_vidrec()
 	wnd.hoverlut[
 	(bar:add_icon("aspect", "l", cfg.bordericns["aspect"], aspectpop)).vid
 	] = MESSAGE["VIDREC_ASPECT"];
-	
-	wnd.hoverlut[
-	(bar:add_icon("vcodec", "l", cfg.bordericns["vcodec"], vcodecpop)).vid
-	] = MESSAGE["VIDREC_CODEC"];
 
-	wnd.hoverlut[
-	(bar:add_icon("vqual", "l", cfg.bordericns["vquality"], function(self)
-		qualpop(self, "vquality"); end)).vid
-	] = MESSAGE["VIDREC_QUALITY"];
+	if (not use_remoting) then
+		wnd.hoverlut[
+		(bar:add_icon("vcodec", "l", cfg.bordericns["vcodec"], vcodecpop)).vid
+		] = MESSAGE["VIDREC_CODEC"];
+	end
 
-	wnd.hoverlut[
-	(bar:add_icon("acodec", "l", cfg.bordericns["acodec"], acodecpop)).vid
-	] = MESSAGE["VIDREC_ACODEC"];
+	if (not use_remoting) then
+		wnd.hoverlut[
+		(bar:add_icon("vqual", "l", cfg.bordericns["vquality"], function(self)
+			qualpop(self, "vquality"); end)).vid
+		] = MESSAGE["VIDREC_QUALITY"];
+	end
 
-	wnd.hoverlut[
-	(bar:add_icon("cformat", "l", cfg.bordericns["cformat"], cformatpop)).vid
-	] = MESSAGE["VIDREC_CFORMAT"];
+	if (not use_remoting) then
+		wnd.hoverlut[
+		(bar:add_icon("acodec", "l", cfg.bordericns["acodec"], acodecpop)).vid
+		] = MESSAGE["VIDREC_ACODEC"];
+	end
 
-	wnd.hoverlut[
-	(bar:add_icon("aqual", "l", cfg.bordericns["aquality"], function(self)
-		qualpop(self, "aquality"); end)).vid
-	] = MESSAGE["VIDREC_AQUALITY"];
+	if (not use_remoting) then
+		wnd.hoverlut[
+		(bar:add_icon("cformat", "l", cfg.bordericns["cformat"], cformatpop)).vid
+		] = MESSAGE["VIDREC_CFORMAT"];
+	end
+
+	if (not use_remoting) then
+		wnd.hoverlut[
+		(bar:add_icon("aqual", "l", cfg.bordericns["aquality"], function(self)
+			qualpop(self, "aquality"); end)).vid
+		] = MESSAGE["VIDREC_AQUALITY"];
+	end
 
 	wnd.hoverlut[
 	(bar:add_icon("fps", "l", cfg.bordericns["fps"], fpspop)).vid
 	] = MESSAGE["VIDREC_FPS"];
 
-	wnd.hoverlut[
-	(bar:add_icon("asource", "l", cfg.bordericns["list"], audiopop)).vid
-	] = MESSAGE["VIDREC_ASOURCE"];
+	if (not use_remoting) then
+		wnd.hoverlut[
+		(bar:add_icon("asource", "l", cfg.bordericns["list"], audiopop)).vid
+		] = MESSAGE["VIDREC_ASOURCE"];
+	end
 
-	wnd.hoverlut[
-	(bar:add_icon("settings", "l", cfg.bordericns["settings"], advsettings)).vid
-	] = MESSAGE["VIDREC_ADVANCED"];
+	if (not use_remoting) then
+		wnd.hoverlut[
+		(bar:add_icon("settings", "l", cfg.bordericns["settings"], advsettings)).vid
+		] = MESSAGE["VIDREC_ADVANCED"];
+	end
 
-	wnd.hoverlut[
-	(bar:add_icon("save", "l", cfg.bordericns["save"], destpop)).vid
-	] = MESSAGE["VIDREC_SAVE"];
+	if (not use_remoting) then
+		wnd.hoverlut[
+		(bar:add_icon("save", "l", cfg.bordericns["save"], destpop)).vid
+		] = MESSAGE["VIDREC_SAVE"];
+	else
+		wnd.hoverlut[
+		(bar:add_icon("listen", "l", cfg.bordericns["save"], remotepop)).vid
+		] = MESSAGE["VIDREC_LISTEN"];
+	end
 
 	bar.hover = function(self, vid, x, y, state)
 		if (state == false) then
@@ -861,7 +1055,7 @@ end
 
 local descrtbl = {
 	name = "vidrec",
-	caption = "Recorder",
+	caption = (use_remoting and "Remote Control" or "Recorder"),
 	icon = "vidrec",
 	trigger = spawn_vidrec
 };

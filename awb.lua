@@ -1044,14 +1044,19 @@ function get_root_icon(hint)
 	return icn, desw, desh;
 end
 
+local function vnc_interim()
+	spawn_vncclient();
+end
+
 function builtin_group(self, ofs, lim, desw, desh)
 	local tools = {
  		{"BOING!",    spawn_boing, "boing"   },
 		{"InputConf", awb_inputed, "inputed" },
-		{"Recorder",  spawn_vidrec, "vidrec" },
+		{"Recorder",  function() spawn_vidrec(false); end, "vidrec" },
+		{"Remoting",  function() spawn_vidrec(true); end, "remoting" },
 		{"Compare",   spawn_vidcmp, "vidcmp" },
 		{"Network",   spawn_socsrv, "network"},
-		{"VNC client",spawn_vncclient, "vnc" },
+		{"VNC client", function() spawn_vncclient(); end, "remoting_cl" },
 		{"VidCap",    spawn_vidwin, "vidcap" },
 		{"HeightMap", spawn_hmap, "hghtmap"  }
 	};
