@@ -401,7 +401,7 @@ function setup_external_connections()
 	target_alloc("awb", function(source, status)
 		if (not running) then
 			running = true;
-			forward = targetwnd_nonauth();
+			forward = targetwnd_nonauth(source);
 			setup_external_connections();
 		end
 
