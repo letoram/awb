@@ -695,11 +695,26 @@ local function vnc_input(wnd, src, status)
 	end
 end
 
-local function enableremote(wnd)
+local function enableremote(wnd, msg)
+	local vid, vidset = record_surface(wnd);
 
+	print(msg);
+
+	define_recordtarget(vid, "a", "protocol=vnc:port=50000:noaudio", vidset, {},
+		RENDERTARGET_DETACH, RENDERTARGET_NOSCALE, 
+		tonumber(wnd.fps) > 30 and -1 or -2,
+			function(src, status)
+				vnc_input(wnd, src, status);
+			end
+		);
+
+	show_image(dstvid);
+	wnd:set_border(2, 255, 0, 0);
+	wnd:update_canvas(dstvid);
+	wnd.recording = true;
 end
 
-local function record(wnd)
+local function record_surface(wnd)
 -- detach all objects, use video recording surface as canvas
 	local aspf = getasp(wnd.aspect);
 	local height = wnd.resolution;
@@ -712,6 +727,40 @@ local function record(wnd)
 	end
 	wnd.selected = nil;
 
+	local vidset = {};
+	wnd.wndset = {};
+
+	local baseprop = image_surface_properties(wnd.canvas.vid);
+
+-- translate each surface and add to the final recordset,
+-- take care of the audio mixing in the next stage
+	for i,j in ipairs(wnd.sources) do
+		if (j.kind ~= "recaudio") then
+			local props = image_surface_properties(j.vid);
+			table.insert(vidset, j.vid);
+			link_image(j.vid, j.vid);
+			local relw = math.ceil(props.width / baseprop.width * width);
+			local relh = math.ceil(props.height / baseprop.height * height);
+			local relx = math.ceil(props.x / baseprop.width * width);
+			local rely = math.ceil(props.y / baseprop.height * height);
+			resize_image(j.vid, relw, relh);
+			move_image(j.vid, relx, rely);
+			local went = {
+				source = j.data,
+				w = relw,
+				h = relh,
+				x = relx,
+				y = rely
+			};
+			table.insert(wnd.wndset, went);
+		end
+	end
+
+	local dstvid = fill_surface(width, height, 0, 0, 0, width, height);
+	return dstvid, vidset;	
+end
+
+local function record(wnd)
 	local fmtstr = "";
 	if (wnd.streaming) then
 		fmtstr = string.format("libvorbis:vcodec=libx264:container" ..
@@ -746,43 +795,13 @@ local function record(wnd)
 	else
 		asources = WORLDID;
 	end
-	
-	local vidset = {};
-	wnd.wndset = {};
 
-	local baseprop = image_surface_properties(wnd.canvas.vid);
+	local dstvid, vidset = record_surface(wnd); 
 
--- translate each surface and add to the final recordset,
--- take care of the audio mixing in the next stage
-	for i,j in ipairs(wnd.sources) do
-		if (j.kind ~= "recaudio") then
-			local props = image_surface_properties(j.vid);
-			table.insert(vidset, j.vid);
-			link_image(j.vid, j.vid);
-			local relw = math.ceil(props.width / baseprop.width * width);
-			local relh = math.ceil(props.height / baseprop.height * height);
-			local relx = math.ceil(props.x / baseprop.width * width);
-			local rely = math.ceil(props.y / baseprop.height * height);
-			resize_image(j.vid, relw, relh);
-			move_image(j.vid, relx, rely);
-			local went = {
-				source = j.data,
-				w = relw,
-				h = relh,
-				x = relx,
-				y = rely
-			};
-			table.insert(wnd.wndset, went);
-		end
-	end
-
-	local dstvid = fill_surface(width, height, 0, 0, 0, width, height);
-	define_recordtarget(dstvid, wnd.destination, 
-		"protocol=vnc:port=50000:" .. fmtstr, vidset, asources,
+	define_recordtarget(dstvid, wnd.destination, fmtstr, vidset, asources,
 		RENDERTARGET_DETACH, RENDERTARGET_NOSCALE, 
 		tonumber(wnd.fps) > 30 and -1 or -2,
 			function(src, status)
-				vnc_input(wnd, src, status);
 			end
 		);
 
@@ -832,6 +851,62 @@ end
 
 local function save_settings(wnd)
 	
+end
+
+local function parse_connect(wnd, msg)
+	print(wnd, msg);
+
+-- msg format: 1..4d [port]
+-- existence of '.' or alpha, host
+-- existence of : port and host
+
+	wnd.ready = true;
+	wnd.dir.tt:destroy();
+
+	wnd.input = nil;
+	wnd:resize(wnd.w, wnd.h);
+	
+end
+
+local function listen_host_dialog(wnd)
+	local buttons = {
+		{
+		caption = desktoplbl("Listen"),
+		trigger = function(own)
+			parse_connect(wnd, own.inputfield.msg);
+		end
+		},
+		{
+		caption = desktoplbl("Cancel"),
+		trigger = function(own)	
+		end
+		}
+	};
+
+	print("listen host dialog");
+	awbwman_dialog(desktoplbl("Listen on: (host:port, :port)"),
+		buttons, {input = { w = 100, h = 20, 
+			limit = 48, accept = 1, cancel = 2}}, false);
+end
+
+local function remotepop(icn)
+	local wnd = icn.parent.parent;
+	local lst = {
+		"Specify...",
+	};
+
+	local funtbl = {
+		function()
+			listen_host_dialog(wnd);	
+		end
+	};
+
+--
+-- populate list from database, say latest three or something,
+-- and add here. Those should ( by default ) also re-use credentials (pwd, ..)
+-- 
+	local vid, lines = desktoplbl(table.concat(lst, "\\n\\r"));
+	awbwman_popup(vid, lines, funtbl, {ref = icn.vid});
 end
 
 function spawn_vidrec(use_remoting)
