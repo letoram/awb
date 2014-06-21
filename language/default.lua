@@ -77,6 +77,11 @@ return {
 	VIDREC_NOKEY   = "No stream.key found, streaming disabled.",
 	VIDREC_ADVANCED = "Advanced Settings",
 	VIDREC_CFORMAT = "Container Format",
+	VIDREC_SAVE    = "Save",
+	VIDREC_LISTEN  = "Listen",
+	VIDREC_PASS    = "Set Passkey",
+	VIDREC_CONNLIM = "Connection Limit",
+	VIDREC_PROTO   = "Remoting Protocol",
 
 	HELP_GLOBAL = [[
 		\#00ff00(global)\n\r\#ffffff

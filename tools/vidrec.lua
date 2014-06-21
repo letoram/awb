@@ -698,8 +698,6 @@ end
 local function enableremote(wnd, msg)
 	local vid, vidset = record_surface(wnd);
 
-	print(msg);
-
 	define_recordtarget(vid, "a", "protocol=vnc:port=50000:noaudio", vidset, {},
 		RENDERTARGET_DETACH, RENDERTARGET_NOSCALE, 
 		tonumber(wnd.fps) > 30 and -1 or -2,
@@ -883,10 +881,43 @@ local function listen_host_dialog(wnd)
 		}
 	};
 
-	print("listen host dialog");
 	awbwman_dialog(desktoplbl("Listen on: (host:port, :port)"),
 		buttons, {input = { w = 100, h = 20, 
 			limit = 48, accept = 1, cancel = 2}}, false);
+end
+
+local function passpop(icn)
+	local buttons = {
+		{
+		caption = desktoplbl("Set"),
+		trigger = function(own)
+			wnd.pass = own.inputfield.msg;
+		end,
+		caption = desktoplbl("Cancel"),
+		trigger = function(own)
+		end
+		};
+	}
+
+	awbwman_dialog(desktoplbl("Set new passphrase:"),
+		buttons, {input = { w = 100, h = 20,
+			limit = 48, accept = 1, cancel = 2}}, false);
+end
+
+local function protopop(icn)
+	local wnd = icn.parent.parent;
+	local lst = {
+		"VNC"
+	};
+	
+	local funtbl = {
+		function()
+			wnd.protocol = "vnc";
+		end
+	};
+
+	local vid, lines = desktoplbl(table.concat(lst, "\\n\\r"));
+	awbwman_popup(vid, lines, funtbl, {ref = icn.vid});
 end
 
 local function remotepop(icn)
@@ -1021,28 +1052,20 @@ function spawn_vidrec(use_remoting)
 		wnd.hoverlut[
 		(bar:add_icon("vcodec", "l", cfg.bordericns["vcodec"], vcodecpop)).vid
 		] = MESSAGE["VIDREC_CODEC"];
-	end
-
-	if (not use_remoting) then
+		
 		wnd.hoverlut[
 		(bar:add_icon("vqual", "l", cfg.bordericns["vquality"], function(self)
 			qualpop(self, "vquality"); end)).vid
 		] = MESSAGE["VIDREC_QUALITY"];
-	end
-
-	if (not use_remoting) then
+		
 		wnd.hoverlut[
 		(bar:add_icon("acodec", "l", cfg.bordericns["acodec"], acodecpop)).vid
 		] = MESSAGE["VIDREC_ACODEC"];
-	end
-
-	if (not use_remoting) then
+		
 		wnd.hoverlut[
 		(bar:add_icon("cformat", "l", cfg.bordericns["cformat"], cformatpop)).vid
 		] = MESSAGE["VIDREC_CFORMAT"];
-	end
-
-	if (not use_remoting) then
+		
 		wnd.hoverlut[
 		(bar:add_icon("aqual", "l", cfg.bordericns["aquality"], function(self)
 			qualpop(self, "aquality"); end)).vid
@@ -1057,19 +1080,23 @@ function spawn_vidrec(use_remoting)
 		wnd.hoverlut[
 		(bar:add_icon("asource", "l", cfg.bordericns["list"], audiopop)).vid
 		] = MESSAGE["VIDREC_ASOURCE"];
-	end
-
-	if (not use_remoting) then
+		
 		wnd.hoverlut[
 		(bar:add_icon("settings", "l", cfg.bordericns["settings"], advsettings)).vid
 		] = MESSAGE["VIDREC_ADVANCED"];
-	end
-
-	if (not use_remoting) then
+		
 		wnd.hoverlut[
 		(bar:add_icon("save", "l", cfg.bordericns["save"], destpop)).vid
 		] = MESSAGE["VIDREC_SAVE"];
 	else
+		wnd.hoverlut[
+		(bar:add_icon("pass", "l", cfg.bordericns["save"], passpop)).vid
+		] = MESSAGE["VIDREC_PASS"];
+
+		wnd.hoverlut[
+		(bar:add_icon("protocol", "l", cfg.bordericns["save"], protopop)).vid
+		] = MESSAGE["VIDREC_PROTO"];
+
 		wnd.hoverlut[
 		(bar:add_icon("listen", "l", cfg.bordericns["save"], remotepop)).vid
 		] = MESSAGE["VIDREC_LISTEN"];

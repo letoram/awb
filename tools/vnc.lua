@@ -1,10 +1,14 @@
 --
--- VNC client / server management
--- Requires the 'vnc' avfeed- interface frameserver
+-- VNC client management
+-- Requires the 'remoting' avfeed- interface frameserver
+-- or an external_alloc that has exposed that classid.
 --
--- Client parts are a simplified version of the 'target' mode.
--- Server parts is a mixed hybrid using 'recording' as a basis.
---
+-- Possible ideas;
+--  1. keymap bind
+--  2. macro recording / playback
+--  3. button to zoom / reset zoom, region selector 
+--     on canvas, meta + mouse to pan
+--  
 local bw_fifty_shader = [[
 uniform sampler2D map_diffuse;
 uniform float obj_opacity;
@@ -14,7 +18,7 @@ varying vec2 texco;
 void main(void)
 {
 	vec3 col = texture2D(map_diffuse, texco).rgb;
-	float intens = 0.5 * (( col.r + col.g + col.b ) / 3);
+	float intens = 0.5 * (( col.r + col.g + col.b ) / 3.0);
 	
 	gl_FragColor = vec4(intens, intens, intens, obj_opacity);
 }
