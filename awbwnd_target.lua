@@ -41,7 +41,7 @@ local function target_coreopts(wnd)
 	if (resource(fn)) then
 		zap_resource(fn);
 	end
-	
+
 	if (open_rawresource(fn)) then
 		local lines = {};
 		for k,v in pairs(wnd.coreopts) do
@@ -58,7 +58,7 @@ end
 
 local function spawn_corewnd(wnd)
 	local conftbl = {};
-	local dumptbl = {}; -- wnd.coreopts has fields to protect 
+	local dumptbl = {}; -- wnd.coreopts has fields to protect
 
 	for k,v in pairs(wnd.coreopts) do
 		local entry = {};
@@ -89,8 +89,8 @@ local function spawn_corewnd(wnd)
 	newwnd.dir.t:add_icon("save", "l", awbwman_cfg().bordericns["save"],
 		function(self)
 			local vid, lines = desktoplbl("Target Defaults");
-			awbwman_popup(vid, lines, 
-				function(ind) 
+			awbwman_popup(vid, lines,
+				function(ind)
 					target_coreopts(wnd);
 					newwnd:destroy();
 				end);
@@ -100,7 +100,7 @@ local function spawn_corewnd(wnd)
 	if (newwnd == nil) then
 		return;
 	end
-	
+
 	wnd:add_cascade(newwnd);
 	local mx, my = mouse_xy();
 	if (mx + newwnd.w > VRESW) then
@@ -126,7 +126,7 @@ local function sysopt_sel(icn, wnd)
 	local lst = {
 		"Soft Reset",
 	};
-	
+
 	if (wnd.external_source == nil) then
 		table.insert(lst, "Hard Reset");
 	end
@@ -143,21 +143,21 @@ local function sysopt_sel(icn, wnd)
 
 -- don't want the "Close.." popup
 			wnd:real_destroy();
-			targetwnd_setup(tbl, fact, copt); 
+			targetwnd_setup(tbl, fact, copt);
 		end
 	};
 
 	if (wnd.coreopts) then
 		table.insert(lst, 1, "Core Options...");
 		table.insert(funtbl, 1, function()
-			spawn_corewnd(wnd);	
+			spawn_corewnd(wnd);
 		end);
 	end
 
 	local str = table.concat(lst, [[\n\r]]);
 	local vid, lines = desktoplbl(str);
 	awbwman_popup(vid, lines, function(ind)
-		funtbl[ind]();	
+		funtbl[ind]();
 	end, {ref = icn.vid});
 end
 
@@ -178,7 +178,7 @@ local function inputlay_sel(icn, wnd)
 			table.insert(lst2, [[\#00ff00]] .. val);
 		else
 			table.insert(lst2, [[\#ffffff]] .. val);
-		end	
+		end
 	end
 
 	local str = table.concat(lst2, [[\n\r]]);
@@ -186,7 +186,7 @@ local function inputlay_sel(icn, wnd)
 
 	awbwman_popup(vid, lines, function(ind)
 		wnd.inp_val = lst[ind];
-		wnd.inp_cfg = inputed_getcfg(lst[ind]); 
+		wnd.inp_cfg = inputed_getcfg(lst[ind]);
 	end, {ref = icn.vid});
 end
 
@@ -224,7 +224,7 @@ local function advanced_defaults(wnd, ind)
 	end
 
 -- should really segment / refactor all these
--- little settings into seperate tables and just 
+-- little settings into seperate tables and just
 -- iterate / expand that way
 	write_rawresource(string.format([[
 local args = {};
@@ -251,9 +251,9 @@ return args;]],
 		wnd.jitterxfer, wnd.mouse_mode,
 		wnd.mouse_accel, wnd.mousex_pl,
 		wnd.mousex_ax, wnd.mousey_pl,
-		wnd.mousey_ax, wnd.mouselb_pl, 
-		wnd.mouselb_btn, wnd.mouserb_pl, 
-		wnd.mouserb_btn 
+		wnd.mousey_ax, wnd.mouselb_pl,
+		wnd.mouselb_btn, wnd.mouserb_pl,
+		wnd.mouserb_btn
 		));
 
 	close_rawresource();
@@ -261,13 +261,13 @@ end
 
 function awbtarget_settingswin(tgtwin)
 	local skiptbl = {
-		"Automatic", 
+		"Automatic",
 		"None",
-		"Skip 1", 
-		"Skip 2", 
-		"Skip 3", 
-		"Skip 4", 
-		"Rollback 1", 
+		"Skip 1",
+		"Skip 2",
+		"Skip 3",
+		"Skip 4",
+		"Rollback 1",
 		"Rollback 2",
 		"Rollback 3"
 	};
@@ -289,7 +289,7 @@ function awbtarget_settingswin(tgtwin)
 			wnd:force_update();
 		end,
 		rtrigger = trigger,
-		cols = {"Graph Debug", tostring(tgtwin.graphdbg)} 
+		cols = {"Graph Debug", tostring(tgtwin.graphdbg)}
 		},
 		{
 		name = "preaud",
@@ -457,12 +457,12 @@ function awbtarget_settingswin(tgtwin)
 	end
 
 	if (tgtwin.external_source == nil) then
-	newwnd.dir.t:add_icon("save", "l", awbwman_cfg().bordericns["save"], 
+	newwnd.dir.t:add_icon("save", "l", awbwman_cfg().bordericns["save"],
 		function(self)
 			local savetbl = {'Game Defaults', 'Target Defaults', 'Global Defaults'};
 				local vid,lines = desktoplbl(table.concat(savetbl, "\\n\\r"));
-				awbwman_popup(vid, lines, 
-					function(ind) advanced_defaults(tgtwin, ind); 
+				awbwman_popup(vid, lines,
+					function(ind) advanced_defaults(tgtwin, ind);
 				end);
 		end
 	);
@@ -473,15 +473,15 @@ end
 
 --
 -- Re-uses the same patterns as gridle
--- If the user wants to load savestates with other names, 
+-- If the user wants to load savestates with other names,
 -- he'll have to drag'n'drop from the desktop group
 --
 function awbtarget_listsnaps(tgtwin, gametbl)
-	local base = glob_resource(string.format("savestates/%s*", 
+	local base = glob_resource(string.format("savestates/%s*",
 		tgtwin.snap_prefix), SHARED_RESOURCE);
 
 	if (base and #base > 0) then
--- The number of possible savestates make this one difficult 
+-- The number of possible savestates make this one difficult
 -- to maintain as a popup, so use a list window
 		local newwnd = awbwman_listwnd(
 			menulbl(gametbl.title .. ":savestates"), deffont_sz, linespace, {1.0},
@@ -489,14 +489,14 @@ function awbtarget_listsnaps(tgtwin, gametbl)
 				local res = {};
 				local ul  = ofs + lim;
 				ul = ul > #base and #base or ul;
-	
+
 				for i=ofs, ul do
 					table.insert(res, {
 						name = base[i],
-						trigger = function() 
+						trigger = function()
 							restore_target(tgtwin.recv, base[i]);
 							tgtwin.laststate = string.sub(base[i], #tgtwin.snap_prefix+1);
-						end, 
+						end,
 						name = base[i],
 						cols = {string.sub(base[i], #tgtwin.snap_prefix+1)}
 					});
@@ -510,11 +510,11 @@ function awbtarget_listsnaps(tgtwin, gametbl)
 		tgtwin:add_cascade(newwnd);
 	end
 end
-	
+
 local function awbtarget_save(pwin, res)
 	if (res == nil) then
 		local buttontbl = {
-			{ caption = desktoplbl("OK"), trigger = function(own) 
+			{ caption = desktoplbl("OK"), trigger = function(own)
 				awbtarget_save(pwin, own.inputfield.msg); end },
 			{ caption = desktoplbl("Cancel"), trigger = function(own) end }
 		};
@@ -526,7 +526,7 @@ local function awbtarget_save(pwin, res)
 		pwin:add_cascade(dlg);
 	else
 		snapshot_target(pwin.recv, pwin.snap_prefix .. res);
-		pwin.laststate = res; 
+		pwin.laststate = res;
 	end
 end
 
@@ -559,7 +559,7 @@ local function awbtarget_addstateopts(pwin)
 	(bartt:add_icon("load", "l", cfg.bordericns["load"], function(self)
 		awbtarget_listsnaps(pwin, pwin.gametbl);
 	end)).vid] = MESSAGE["HOVER_STATELOAD"];
-	
+
 end
 
 local function ntsc_dlg(tgtwin)
@@ -712,7 +712,7 @@ local function awbtarget_ntscpop(wnd, icn)
 			else
 				wnd.ntsc_state = true;
 				ntsc_dlg(wnd);
-				wnd:set_ntscflt();	
+				wnd:set_ntscflt();
 			end
 		end
 	};
@@ -724,12 +724,12 @@ end
 local function awbtarget_dropstateopts(pwin)
 	local cfg = awbwman_cfg();
 	local bartt = pwin.dir.tt;
-	
+
 	for i=#bartt.left,1,-1 do
 		if (bartt.left[i].name == "save") then
 			bartt.left[i]:destroy();
 		elseif (bartt.left[i].name == "load") then
-			bartt.left[i]:destroy();	
+			bartt.left[i]:destroy();
 		end
 	end
 
@@ -751,7 +751,7 @@ local function factrest(wnd, str)
 	for i=2,#lines do
 		local opts = string.split(lines[i], ":");
 
--- depending on group, treat arg:argv differently 
+-- depending on group, treat arg:argv differently
 		if (opts[1]) then
 			if (opts[1] == "ntscattr") then
 				for i=2,#opts do
@@ -760,18 +760,18 @@ local function factrest(wnd, str)
 						wnd[arg[1]] = tonumber_rdx(arg[2]);
 					end
 				end
-			
+
 			wnd.ntsc_state = true;
 			wnd:set_ntscflt();
 
--- general opts, split into k-v tbl then map known 
+-- general opts, split into k-v tbl then map known
 -- attributes and run respective triggers
 			elseif (opts[1] == "lineattr") then
 				for i=2,#opts do
 					local arg = string.split(opts[i], ":");
 					for ind, argv in ipairs(arg) do
 						local argg = string.split(argv, "=");
-						local opc, oper; 
+						local opc, oper;
 
 						if (argg ~= nil and #argg > 1) then
 							opc  = argg[1];
@@ -781,7 +781,7 @@ local function factrest(wnd, str)
 						end
 
 						if (opc == "skipmode") then
-							wnd.skipmode = oper; 
+							wnd.skipmode = oper;
 						elseif (opc == "framealign") then
 							wnd.framealign = tonumber(oper);
 						elseif (opc == "preaud") then
@@ -837,7 +837,7 @@ local function factrest(wnd, str)
 
 			elseif (opts[1] == "inputcfg") then
 				if (resource("keyconfig/" .. opts[2])) then
-					wnd.inp_cfg = inputed_getcfg(opts[2]); 
+					wnd.inp_cfg = inputed_getcfg(opts[2]);
 					if (wnd.inp_cfg) then
 						wnd.inp_val = opts[2];
 					end
@@ -861,7 +861,7 @@ local function factrest(wnd, str)
 				wnd:rebuild_chain();
 
 			elseif (opts[1] == "fltattr") then
-				wnd.filters.upscaler = opts[2]; 
+				wnd.filters.upscaler = opts[2];
 				wnd:rebuild_chain();
 
 			elseif (opts[1] == "glowattr") then
@@ -884,8 +884,8 @@ local function factrest(wnd, str)
 
 			elseif (opts[1] == "statectl") then
 				wnd.laststate = string.sub(opts[2], #wnd.snap_prefix+1);
-				restore_target(wnd.recv, opts[2]); 
-					
+				restore_target(wnd.recv, opts[2]);
+
 -- rest, send to parent (mediawnd) and have it rebuild chain
 			else
 				print("unhandled group:", opts[1]);
@@ -909,7 +909,7 @@ local function gen_factorystr(wnd)
 	table.insert(lines, wnd.factory_base);
 
 	table.insert(lines, string.format("lineattr:skipmode=%s:" ..
-		"framealign=%d:preaud=%d:mediavol=%s", 
+		"framealign=%d:preaud=%d:mediavol=%s",
 		wnd.skipmode, wnd.framealign, wnd.preaud, tostring_rdx(wnd.mediavol)));
 
 	if (wnd.inp_val ~= nil) then
@@ -921,7 +921,7 @@ local function gen_factorystr(wnd)
 	end
 
 	if (wnd.laststate ~= nil) then
-		table.insert(lines, 
+		table.insert(lines,
 			string.format("statectl:%s", wnd.snap_prefix .. wnd.laststate));
 	end
 
@@ -930,7 +930,7 @@ local function gen_factorystr(wnd)
 		"ntsc_saturation=%s:ntsc_contrast=%s:" ..
 		"ntsc_brightness=%s:ntsc_gamma=%s:ntsc_sharpness=%s:" ..
 		"ntsc_resolution=%s:ntsc_artifacts=%s:" ..
-		"ntsc_bleed=%s:ntsc_fringing=%s", 
+		"ntsc_bleed=%s:ntsc_fringing=%s",
 		tostring_rdx(wnd.ntsc_hue), tostring_rdx(wnd.ntsc_saturation),
 		tostring_rdx(wnd.ntsc_contrast), tostring_rdx(wnd.ntsc_brightness),
 		tostring_rdx(wnd.ntsc_gamma), tostring_rdx(wnd.ntsc_sharpness),
@@ -966,16 +966,26 @@ local function gen_factorystr(wnd)
 end
 
 local function setcoreopt(wnd, key, value)
-	target_coreopt(wnd.recv, 
+	target_coreopt(wnd.recv,
 		wnd.coreopts[key].num, value);
 
 -- for hard reset
 	wnd.coreopts[key].value = value;
 end
 
+local function canvas_tagh(wnd, tag)
+	if (tag.source.alive and tag.source.state_size and
+		tag.source.state_size == wnd.state_size) then
+		bond_target(tag.source.recv, wnd.recv);
+	end
+
+	tag:drop();
+end
+
 local function datashare(wnd)
 	local res = awbwman_setup_cursortag(sysicons.floppy);
 	res.kind = "media";
+	res.class = "target";
 	res.name = wnd.name;
 	res.audio = wnd.reca;
 
@@ -991,7 +1001,7 @@ local function datashare(wnd)
 		if (wnd.coreopts) then
 		for k,v in pairs(wnd.coreopts) do
 			if (v.value ~= nil) then
-				table.insert(lines, string.format("res.coreopts[%q] = %q;\n", 
+				table.insert(lines, string.format("res.coreopts[%q] = %q;\n",
 					v.key, v.value));
 			end
 		end
@@ -1084,14 +1094,14 @@ end
 local tgtwnd_mappings = {};
 tgtwnd_mappings["QUICKSAVE"] = function(wnd, iotbl)
 	if (iotbl.active) then
-		local fname = wnd.snap_prefix .. "quick"; 
+		local fname = wnd.snap_prefix .. "quick";
 		snapshot_target(wnd.recv, fname);
 	end
 end
 
 tgtwnd_mappings["QUICKLOAD"] = function(wnd, iotbl)
 	if (iotbl.active) then
-		local fname = wnd.snap_prefix .. "quick"; 
+		local fname = wnd.snap_prefix .. "quick";
 		restore_target(wnd.recv, fname);
 	end
 end
@@ -1102,15 +1112,15 @@ tgtwnd_mappings["FASTFORWARD"] = function(wnd, iotbl)
 	if (iotbl.active == false) then
 		skipmode = getskipval(wnd.skipmode);
 	else
-		skipmode = 10; 
+		skipmode = 10;
 	end
 
-	target_framemode(wnd.recv, skipmode, 
+	target_framemode(wnd.recv, skipmode,
 		wnd.framealign, wnd.preaud, wnd.jitterstep, wnd.jitterxfer);
 end
 
 local function load_settings(pwin, gametbl)
-	local srctbl; 
+	local srctbl;
 
 	if (resource(targetgame_cfgname(gametbl))) then
 		srctbl = system_load(targetgame_cfgname(gametbl))();
@@ -1133,7 +1143,7 @@ end
 
 --
 -- Target window
--- Builds upon a spawned window (pwin) and returns a 
+-- Builds upon a spawned window (pwin) and returns a
 -- suitable callback for use in launch_target- style commands.
 -- Assumes a bar already existing in the "tt" spot to add icons to.
 --
@@ -1150,6 +1160,7 @@ function awbwnd_target(pwin, caps, factstr)
 	pwin.helpmsg = MESSAGE["HELP_TARGET"];
 	pwin.break_display = awbwnd_breakdisplay;
 	pwin.reset_opposing = false;
+	pwin.state_size = 0;
 
 -- options part of the "factory string" (along with filter)
 	pwin.graphdbg   = false;
@@ -1214,11 +1225,11 @@ function awbwnd_target(pwin, caps, factstr)
 
 	pwin.set_ntscflt = function(self)
 		if (self.ntsc_state) then
-			target_postfilter_args(pwin.recv, 1, 
+			target_postfilter_args(pwin.recv, 1,
 				pwin.ntsc_hue, pwin.ntsc_saturation, pwin.ntsc_contrast);
-			target_postfilter_args(pwin.recv, 2, 
+			target_postfilter_args(pwin.recv, 2,
 				pwin.ntsc_brightness, pwin.ntsc_gamma, pwin.ntsc_sharpness);
-			target_postfilter_args(pwin.recv, 3, 
+			target_postfilter_args(pwin.recv, 3,
 				pwin.ntsc_resolution, pwin.ntsc_artifacts, pwin.ntsc_bleed);
 			target_postfilter_args(pwin.recv, 4, pwin.ntsc_fringing);
 			target_postfilter(pwin.recv, POSTFILTER_NTSC);
@@ -1231,21 +1242,21 @@ function awbwnd_target(pwin, caps, factstr)
 	pwin.add_statectls  = awbtarget_addstateopts;
 	pwin.drop_statectls = awbtarget_dropstateopts;
 
-	pwin.on_resized = function(wnd, wndw, wndh, cnvw, cnvh) 
+	pwin.on_resized = function(wnd, wndw, wndh, cnvw, cnvh)
 		pwin:rebuild_chain(cnvw, cnvh);
 	end;
 
 	pwin.set_mvol = function(self, val)
 		pwin.mediavol = val;
-		local tmpvol = awbwman_cfg().global_vol * pwin.mediavol; 
+		local tmpvol = awbwman_cfg().global_vol * pwin.mediavol;
 		tmpvol = tmpvol < 0 and 0 or tmpvol;
 		if (pwin.reca ~= nil) then
-			audio_gain(pwin.reca, tmpvol);	
+			audio_gain(pwin.reca, tmpvol);
 		end
 	end
-	
+
 	bartt.hoverlut[
-	(bartt:add_icon("clone", "r", cfg.bordericns["clone"], 
+	(bartt:add_icon("clone", "r", cfg.bordericns["clone"],
 		function() datashare(pwin); end)).vid] = MESSAGE["HOVER_CLONE"];
 
 	bartt.hoverlut[
@@ -1259,7 +1270,7 @@ function awbwnd_target(pwin, caps, factstr)
 	end)).vid] = MESSAGE["HOVER_VOLUME"];
 
 	bartt.hoverlut[
-	(bartt:add_icon("filters", "r", cfg.bordericns["filter"], 
+	(bartt:add_icon("filters", "r", cfg.bordericns["filter"],
 		function(self) awbwmedia_filterpop(pwin, self); end)).vid
 	] = MESSAGE["HOVER_FILTER"];
 
@@ -1273,8 +1284,8 @@ function awbwnd_target(pwin, caps, factstr)
 		function(self) awbtarget_ntscpop(pwin, self);	end)).vid
 	] = MESSAGE["HOVER_CPUFILTER"];
 
-	local pausebtn = 
-	bartt:add_icon("pause", "l", cfg.bordericns["pause"], function(self) 
+	local pausebtn =
+	bartt:add_icon("pause", "l", cfg.bordericns["pause"], function(self)
 		if (pwin.paused or pwin.ffstate ~= nil) then
 			pwin.paused = nil;
 			pwin.ffstate = nil;
@@ -1317,11 +1328,11 @@ function awbwnd_target(pwin, caps, factstr)
 --
 	bartt.hoverlut[
 	(bartt:add_icon("ginput", "r", cfg.bordericns["ginput"],
-		function(self) 
+		function(self)
 			if (awbwman_reqglobal(pwin)) then
-				image_shader(self.vid, "awb_selected"); 
+				image_shader(self.vid, "awb_selected");
 			else
-				image_shader(self.vid, "DEFAULT"); 
+				image_shader(self.vid, "DEFAULT");
 			end
 		end)).vid] = MESSAGE["HOVER_GLOBALINPUT"];
 
@@ -1330,14 +1341,14 @@ function awbwnd_target(pwin, caps, factstr)
 		function(self) inputlay_sel(self, pwin); end)).vid
 	] = MESSAGE["HOVER_INPUTCFG"];
 
--- Forced remapping of mouse in / out 
+-- Forced remapping of mouse in / out
 	pwin.minput = function(self, iotbl, focused)
 		if (iotbl.kind == "digital") then
 			if (iotbl.subid == 0) then
-				iotbl.label = string.format("PLAYER%d_BUTTON%d", 
+				iotbl.label = string.format("PLAYER%d_BUTTON%d",
 				pwin.mouselb_pl, pwin.mouselb_btn);
 			else
-				iotbl.label = string.format("PLAYER%d_BUTTON%d", 
+				iotbl.label = string.format("PLAYER%d_BUTTON%d",
 					pwin.mouserb_pl, pwin.mouserb_btn);
 			end
 
@@ -1354,22 +1365,22 @@ function awbwnd_target(pwin, caps, factstr)
 			end
 
 			iotbl.label = string.format("PLAYER%d_AXIS%d", pl_n, pl_a);
-			
+
 -- scale both absolute and relative (if provided)
 			iotbl.samples[1] = iotbl.samples[1] * pwin.mouse_accel;
 			if (iotbl.samples[2]) then
 				iotbl.samples[2] = iotbl.samples[2] * pwin.mouse_accel;
 			end
-	
+
 -- if (direct) then just pass unaltered (here's a good spot
 -- to add window- local cursor)
 			if (pwin.mouse_mode == "Analog-Remap") then
 				iotbl.samples[2] = nil;
 				if (iotbl.subid == 0) then
-					iotbl.samples[1] = 
+					iotbl.samples[1] =
 						((iotbl.samples[1] / VRESW) - 0.5) * 32767;
 				else
-					iotbl.samples[1] = 
+					iotbl.samples[1] =
 						((iotbl.samples[1] / VRESH) - 0.5) * 32767;
 				end
 			elseif (pwin.mouse_mode == "Relative") then
@@ -1378,7 +1389,7 @@ function awbwnd_target(pwin, caps, factstr)
 			else -- Direct, do nothing with the samples
 			end
 		end
-	
+
 		target_input(pwin.recv, iotbl);
 	end
 
@@ -1387,17 +1398,17 @@ function awbwnd_target(pwin, caps, factstr)
 			if (pwin.inp_cfg == "Raw") then
 				target_input(pwin.recv, iotbl);
 			end
-	
+
 			return;
 		end
-	
+
 		local restbl = inputed_translate(iotbl, pwin.inp_cfg);
-		if (restbl) then 
+		if (restbl) then
 			for i,v in ipairs(restbl) do
 				if (tgtwnd_mappings[v.label]) then
 					tgtwnd_mappings[v.label](pwin, iotbl);
 				end
-	
+
 -- LEFT :- rel.right + push.left etc.
 				if (pwin.reset_opposing) then
 					reset_opposing(pwin.recv, v);
@@ -1418,22 +1429,22 @@ function awbwnd_target(pwin, caps, factstr)
 		end
 
 		if (status.kind == "frameserver_terminated") then
-			pwin:break_display();	
+			pwin:break_display();
 
 		elseif (status.kind == "message") then
---	
+--
 
 		elseif (status.kind == "coreopt") then
 			add_corearg(pwin, status.argument);
 
 		elseif (status.kind == "ident") then
---	
+--
 
 		elseif (status.kind == "resource_status") then
---		
+--
 
 		elseif (status.kind == "loading") then
---     
+--
 
 		elseif (status.kind == "frame") then
 -- do nothing
@@ -1466,7 +1477,7 @@ function awbwnd_target(pwin, caps, factstr)
 			pwin.updated = true;
 			image_set_txcos_default(pwin.canvas.vid, pwin.mirrored);
 			force_image_blend(pwin.canvas.vid, BLEND_NONE);
-	
+
 		elseif (status.kind == "state_size") then
 			pwin:drop_statectls();
 
@@ -1480,8 +1491,28 @@ function awbwnd_target(pwin, caps, factstr)
 	end
 
 	local canvash = {
-		own = function(self, vid) return vid == pwin.canvas.vid; end,
-		click = function() pwin:focus(); end,
+		own = function(self, vid)
+			return vid == pwin.canvas.vid;
+		end,
+		click = function()
+			pwin:focus();
+			local tag = awbwman_cursortag();
+			if (tag and tag.class == "target") then
+				canvas_tagh(pwin, tag);
+			end
+		end,
+		over = function()
+			local tag = awbwman_cursortag();
+			if (tag and tag.class == "target") then
+				tag:hint(true);
+			end
+		end,
+		out = function()
+			local tag = awbwman_cursortag();
+			if (tag) then
+				tag:hint(false);
+			end
+		end,
 		dblclick = function()
 			awbwman_mousefocus(pwin);
 		end
@@ -1490,7 +1521,7 @@ function awbwnd_target(pwin, caps, factstr)
 	bartt.name = "target_ttbar";
 	canvash.name = "target_canvas";
 
-	mouse_addlistener(canvash, {"click", "dblclick"});
+	mouse_addlistener(canvash, {"click", "dblclick", "over", "out"});
 	table.insert(pwin.handlers, canvash);
 
 	pwin.canvas_iprops = function(self)
@@ -1506,11 +1537,11 @@ end
 --
 -- For non-authoritative connections, we need to disable
 -- the factory, load/store semantics, etc.
--- 
+--
 function targetwnd_nonauth(source)
 	local wnd, cb = awbwman_targetwnd(
 		menulbl("Unknown"), {refid = "targetwnd_external"}, {} );
-		
+
 	if (wnd == nil) then
 		return;
 	end
@@ -1521,7 +1552,7 @@ function targetwnd_nonauth(source)
 	wnd.gametbl = {
 		caption = "external",
 		icon = "external",
-		source = wnd 
+		source = wnd
 	};
 
 	return cb;
@@ -1533,7 +1564,7 @@ end
 local first_init = false;
 
 function targetwnd_setup(game, factstr, coreargs)
-	local fn = string.format("coreopts/%s.cfg", game.target); 
+	local fn = string.format("coreopts/%s.cfg", game.target);
 	if (resource(fn)) then
 		if (coreargs == nil) then
 			coreargs = {};
@@ -1541,14 +1572,14 @@ function targetwnd_setup(game, factstr, coreargs)
 
 		local tbl = system_load(fn)();
 		tbl = tbl ~= nil and tbl or {};
-	
+
 		for k, v in pairs(tbl) do
 			if (coreargs[k] == nil) then
-				coreargs[k] = v;	
+				coreargs[k] = v;
 			end
 		end
 	end
-	
+
 	if (first_init == false) then
 		first_init = true;
 		build_shader(nil, deffshdr, "default_target");
@@ -1568,13 +1599,13 @@ function targetwnd_setup(game, factstr, coreargs)
 			game.setname and game.setname or "");
 
 		game.name = game.title;
-		local wnd, cb = awbwman_targetwnd(menulbl(game.name), 
+		local wnd, cb = awbwman_targetwnd(menulbl(game.name),
 			{refid = "targetwnd_" .. tostring(game.gameid),
 			 factsrc = factstr}, captbl);
 		if (wnd == nil) then
 			return;
 		end
-	
+
 		wnd.gametbl = game;
 		load_settings(wnd, game);
 
@@ -1592,7 +1623,7 @@ function targetwnd_setup(game, factstr, coreargs)
 			local argtbl = {};
 
 			for k,v in pairs(coreargs) do
-				table.insert(argtbl, string.format("core_%s=%s", 
+				table.insert(argtbl, string.format("core_%s=%s",
 					k, type(v) == "table" and v.value or v));
 			end
 
@@ -1601,11 +1632,11 @@ function targetwnd_setup(game, factstr, coreargs)
 			end
 		end
 
-		wnd.recv, wnd.reca = launch_target(game.gameid, 
+		wnd.recv, wnd.reca = launch_target(game.gameid,
 			LAUNCH_INTERNAL, cb, tgtargs);
 
 		wnd.factory_base = "gameid=" .. tostring(game.gameid);
-	
+
 		wnd.name = game.target .. "(" .. game.name .. ")";
 		return wnd;
 	end
