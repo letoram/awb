@@ -6,9 +6,9 @@
 -- Possible ideas;
 --  1. keymap bind
 --  2. macro recording / playback
---  3. button to zoom / reset zoom, region selector 
+--  3. button to zoom / reset zoom, region selector
 --     on canvas, meta + mouse to pan
---  
+--
 local bw_fifty_shader = [[
 uniform sampler2D map_diffuse;
 uniform float obj_opacity;
@@ -19,7 +19,7 @@ void main(void)
 {
 	vec3 col = texture2D(map_diffuse, texco).rgb;
 	float intens = 0.5 * (( col.r + col.g + col.b ) / 3.0);
-	
+
 	gl_FragColor = vec4(intens, intens, intens, obj_opacity);
 }
 ]];
@@ -33,7 +33,7 @@ local function mouse_motion(dst, x, y)
 		pts = 0,
 		samples = {x, 0},
 	};
-	
+
 	target_input(dst, iotbl);
 	iotbl.samples[1] = y;
 	iotbl.subid = 1;
@@ -46,14 +46,14 @@ local function mouse_button(dst, ind, active)
 		subid = ind,
 		kind = "digital",
 		source = "mouse",
-		active = active; 
+		active = active;
 	};
 
 	target_input(dst, iotbl);
 end
 
 local function key_input(dst, btns, state)
-	local iotbl = 
+	local iotbl =
 	{
 		devid = 0,
 		subid = 0,
@@ -77,7 +77,7 @@ local function datashare(wnd)
 	local res = awbwman_setup_cursortag(sysicons.floppy);
 	res.kind = "media";
 	res.name = wnd.name;
-	res.factory = ""; 
+	res.factory = "";
 
 	res.shortcut_trig = function()
 		local lines = {
@@ -105,22 +105,22 @@ local function vnc_keypopup(wnd, icn)
 	};
 
 	local keycbs = {
-		function() 
+		function()
 			reset_target(wnd.controlid);
 		end,
-		function() 
+		function()
 			key_input(wnd.controlid, {"LCTRL", "ESCAPE"}, true);
 			key_input(wnd.controlid, {"LCTRL", "ESCAPE"}, false);
 		end,
-		function() 
+		function()
 			key_input(wnd.controlid, {"LCTRL", "RALT", "BACKSPACE"}, true);
 			key_input(wnd.controlid, {"LCTRL", "RALT", "BACKSPACE"}, false);
 		end,
-		function() 
+		function()
 			key_input(wnd.controlid, {"LCTRL", "RALT", "DELETE"}, true);
 			key_input(wnd.controlid, {"LCTRL", "RALT", "DELETE"}, false);
 		end,
-		function() 
+		function()
 			key_input(wnd.controlid, {"LALT", "F4"}, true);
 			key_input(wnd.controlid, {"LALT", "F4"}, false);
 		end
@@ -132,6 +132,9 @@ end
 
 local function vncclient_setupwin(wnd, source)
 	wnd.connected = true;
+	show_image(source);
+	wnd:update_canvas(source);
+
 	resize_image(source, wnd.canvasw, wnd.canvash);
 
 	wnd.input = function(self, iotbl)
@@ -139,7 +142,7 @@ local function vncclient_setupwin(wnd, source)
 	end
 
 -- some vnc servers may need (if bandwidth permits) to have
--- full refreshes requested periodically. 
+-- full refreshes requested periodically.
 	wnd.clock_pulse = function()
 		if (wnd.periodic ~= nil) then
 			wnd.periodic = wnd.periodic - 1;
@@ -160,14 +163,14 @@ local function vncclient_setupwin(wnd, source)
 			local sprops = image_storage_properties(wnd.canvas.vid);
 
 			mouse_motion(source,
-				(x - props.x) / props.width * sprops.width, 
+				(x - props.x) / props.width * sprops.width,
 				(y - props.y) / props.height * sprops.height);
 		end,
 		click = function()
 			wnd:focus();
 		end,
 		press = function()
-			mouse_button(source, 0, true); 
+			mouse_button(source, 0, true);
 		end,
 		release = function()
 			mouse_button(source, 0, false);
@@ -194,11 +197,11 @@ local function vncclient_setupwin(wnd, source)
 		end
 	};
 
-	mouse_addlistener(canvash, {"click", "rclick", 
+	mouse_addlistener(canvash, {"click", "rclick",
 		"motion", "press", "release", "over", "out"});
 	table.insert(wnd.handlers, canvash);
 
--- only happens in fullscreen, rescale coordinates 
+-- only happens in fullscreen, rescale coordinates
 	wnd.minput = function(self, iotbl, focused)
 		if (iotbl.kind == "analog") then
 			local sprops = image_storage_properties(wnd.canvas.vid);
@@ -209,14 +212,14 @@ local function vncclient_setupwin(wnd, source)
 			wnd.fs_mx = wnd.fs_mx + (iotbl.subid == 0 and iotbl.samples[2] or 0);
 			wnd.fs_my = wnd.fs_my + (iotbl.subid == 1 and iotbl.samples[2] or 0);
 			wnd.fs_mx = wnd.fs_mx < props.x and props.x or wnd.fs_mx;
-			wnd.fs_mx = wnd.fs_mx > (props.x + props.width) 
+			wnd.fs_mx = wnd.fs_mx > (props.x + props.width)
 				and (props.x + props.width) or wnd.fs_mx;
 			wnd.fs_my = wnd.fs_my < props.y and props.y or wnd.fs_my;
-			wnd.fs_my = wnd.fs_my > (props.y + props.height) 
+			wnd.fs_my = wnd.fs_my > (props.y + props.height)
 				and (props.y + props.height) or wnd.fs_my;
 
 			mouse_motion(source,
-				(wnd.fs_mx - props.x) / props.width * sprops.width, 
+				(wnd.fs_mx - props.x) / props.width * sprops.width,
 				(wnd.fs_my - props.y) / props.height * sprops.height);
 		else
 			mouse_button(source, iotbl.subid-1, iotbl.active);
@@ -234,10 +237,10 @@ local function vncclient_setupwin(wnd, source)
 	wnd.fs_my = 0;
 
 	wnd.hoverlut[
-		bar:add_icon("hide_cursor", "l", cfg.bordericns["hide_cursor"], 
+		bar:add_icon("hide_cursor", "l", cfg.bordericns["hide_cursor"],
 		function(self)
 			wnd.mouse_hide = not wnd.mouse_hide;
-			image_sharestorage(cfg.bordericns[wnd.mouse_hide 
+			image_sharestorage(cfg.bordericns[wnd.mouse_hide
 				and "show_cursor" or "hide_cursor"], self.vid);
 
 		end).vid
@@ -289,7 +292,11 @@ local function vncclient_connect(wnd, hoststr, pass)
 	local hp = string.split(hoststr, ":")
 	local host;
 	local port = 5900;
-	pass = "1234";
+
+	if (#hp > 2) then
+		warning("no ipv6 parsing yet");
+		return;
+	end
 
 	if (hp[2] ~= nil) then
 		port = tonumber(hp[2]);
@@ -299,25 +306,25 @@ local function vncclient_connect(wnd, hoststr, pass)
 	end
 
 	local vnc = launch_avfeed(string.format(
-		"host=%s:port=%d:password=%s", host, port, pass), 
+		"host=%s:port=%d:password=%s", host, port, pass),
 		function(source, status)
 			vncclient_event(wnd, source, status);
 		end);
+
+	target_flags(vnc, TARGET_NOALPHA, 1);
 
 	wnd.host = host;
 	wnd.port = port;
 	wnd.pass = pass;
 	wnd.controlid = vnc;
-	show_image(vnc);
-	wnd:update_canvas(vnc);
 end
 
-local function connectwin(pwin)
+local function dlgwin(pwin, msgl, label, cb)
 	local buttontbl = {
 	{
-		caption = desktoplbl("Connect"),
+		caption = desktoplbl(msgl),
 		trigger = function(own)
-			vncclient_connect(pwin, own.inputfield.msg);
+			cb(pwin, own.inputfield.msg);
 		end
 	},
 	{
@@ -327,9 +334,9 @@ local function connectwin(pwin)
 	}
 	};
 
-	local dlg = awbwman_dialog(desktoplbl("Connect To:"), buttontbl,
+	local dlg = awbwman_dialog(desktoplbl(label), buttontbl,
 	{
-		input = 
+		input =
 		{ w = 100, h = 20, limit = 48, accept = 1, cancel = 2 }
 	}, false);
 
@@ -344,7 +351,7 @@ function spawn_vncclient(tbl, fact)
 	local wnd = awbwman_spawn(
 		menulbl(MESSAGE["TOOL_VNCCLIENT"]), {
 			refid = "vncclient", fullscreen = true});
-	
+
 	wnd.hoverlut = {};
 	wnd.mouse_hide = false;
 
@@ -363,7 +370,7 @@ function spawn_vncclient(tbl, fact)
 	bar.click = function()
 		wnd:focus(true);
 	end
-	
+
 	mouse_addlistener(bar, {"click", "hover"});
 
 	wnd:add_handler("on_destroy", function()
@@ -382,8 +389,14 @@ function spawn_vncclient(tbl, fact)
 		};
 
 	local cbtbl = {
-		function(self) 
-			connectwin(wnd); 
+		function(self)
+			dlgwin(wnd, "OK", "Specify host (host, host:port, :port)",
+			function(wnd, host)
+				dlgwin(wnd, "Connect", "Password:", 
+				function(wnd, pass)
+					vncclient_connect(wnd, host, pass);
+				end);
+			end);
 		end
 	};
 
