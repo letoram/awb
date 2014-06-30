@@ -12,6 +12,9 @@
 --  * Record WORLDID and support global input injection
 --
 
+local record_surface = nil;
+local vnc_input = nil;
+
 local function sweepcmp(vid, tbl)
 	for k,v in ipairs(tbl) do
 		if (v == vid) then
@@ -476,26 +479,45 @@ local function audiopop(icn)
 	awbwman_popup(vid, lines, trigtbl, {ref = icn.vid});
 end
 
+local function enableremote(wnd)
+	local vid, vidset = record_surface(wnd);
+	
+	local connstr;
+	if (string.len(wnd.pass) > 0) then
+		connstr = string.format("protocol=%s:port=%d", "vnc", wnd.port);
+	else
+		connstr = string.format("protocol=%s:port=%d:pass=%s", "vnc", wnd.port, 
+			string.gsub(wnd.pass, ":", "\t"));
+	end
+
+	define_recordtarget(vid, "", connstr, vidset, {},
+		RENDERTARGET_DETACH, RENDERTARGET_NOSCALE, 
+		tonumber(wnd.fps) > 30 and -1 or -2,
+			function(src, status)
+				vnc_input(wnd, src, status);
+			end
+		);
+
+	show_image(vid);
+	wnd:set_border(2, 255, 0, 0);
+	wnd:update_canvas(vid);
+	wnd.recording = true;
+end
+
 local function listenpop(icn)
 	local wnd = icn.parent.parent;
 	local lst = {
-		"Listen..."
+		"Listen (Defaults)",
+		"Listen (Custom)"
 	};
 
-	local buttontbl = {
-		{
-			caption = desktoplbl("OK"),
-			trigger = function(own)
-				wnd:set_destination(own.inputfield.msg);
-			end
-		},
-		{
-			caption = desktoplbl("Cancel"),
-			trigger = function(own)
-			end
-		}
+	local funtbl = {
+		function() wnd.port = 5900; wnd.pass = ""; enableremote(wnd); end, 
+		function() listen_host_dialog(wnd); end
 	};
 
+	local vid, lines = desktoplbl(table.concat(lst, "\\n\\r"));
+	awbwman_popup(vid, lines, funtbl, {ref = icn.vid});
 end
 
 local function destpop(icn)
@@ -645,17 +667,36 @@ local function vnc_newcl(wnd, id)
 		end
 	end
 
-	wnd.clients[ id ] = rtbl; 
+	rtbl.cursor = color_surface(8, 8, 127 + math.random(128), 
+		127 + math.random(128), 127 + math.random(128));
+
+	link_image(rtbl.cursor, wnd.canvas.vid);
+	show_image(rtbl.cursor);
+	image_inherit_order(rtbl.cursor, true);
+	order_image(rtbl.cursor, 1);
+
+	wnd.clients[ id ] = rtbl;
 end
 
-local function vnc_input(wnd, src, status)
+vnc_input = function(wnd, src, status)
 	if (status.kind == "cursor_input") then
+		print("status.id", status.id);
+
 		if (wnd.clients[status.id] == nil) then
 			vnc_newcl(wnd, status.id);
 		end
-	
--- don't support overlap / order, seems like there's no point
--- focus follows mouse
+
+-- clamp and translate new coordinates to window-space, 
+-- update cursor accordingly
+	status.x = status.x < 0 and 0 or status.x;
+	status.y = status.y < 0 and 0 or status.y;
+	status.x = status.x > wnd.rec_w and wnd.rec_w or status.x;
+	status.y = status.y > wnd.rec_h and wnd.rec_h or status.y;
+	move_image(wnd.clients[status.id].cursor, 
+		status.x * (wnd.canvasw / wnd.rec_w), 
+		status.y * (wnd.canvash / wnd.rec_h));
+
+-- don't support overlap / order
 		for k,v in ipairs(wnd.wndset) do
 			if (v.source and v.source.alive) then
 				local srcwnd = v.source;
@@ -664,10 +705,12 @@ local function vnc_input(wnd, src, status)
 			end
 		end
 
--- split into motion + possible button changes
+-- split into motion + possible button changes,
+-- these should be translated into the space of the different 
+-- subwindow references, and change which one is in focus. 
 		local dstwin = wnd.clients[status.id].last_wnd;
 		vnc_mouseinput(dstwin, wnd.clients[status.id], status);
-
+	
 	elseif (status.kind == "key_input") then
 		if (wnd.clients[status.id] == nil) then
 			vnc_newcl(wnd, status.id);
@@ -691,28 +734,10 @@ local function vnc_input(wnd, src, status)
 
 	else
 -- messages about connection / disconnection, ...
-		print(status.kind);
 	end
 end
 
-local function enableremote(wnd, msg)
-	local vid, vidset = record_surface(wnd);
-
-	define_recordtarget(vid, "a", "protocol=vnc:port=50000:noaudio", vidset, {},
-		RENDERTARGET_DETACH, RENDERTARGET_NOSCALE, 
-		tonumber(wnd.fps) > 30 and -1 or -2,
-			function(src, status)
-				vnc_input(wnd, src, status);
-			end
-		);
-
-	show_image(dstvid);
-	wnd:set_border(2, 255, 0, 0);
-	wnd:update_canvas(dstvid);
-	wnd.recording = true;
-end
-
-local function record_surface(wnd)
+record_surface = function(wnd)
 -- detach all objects, use video recording surface as canvas
 	local aspf = getasp(wnd.aspect);
 	local height = wnd.resolution;
@@ -754,7 +779,10 @@ local function record_surface(wnd)
 		end
 	end
 
-	local dstvid = fill_surface(width, height, 0, 0, 0, width, height);
+	local dstvid = alloc_surface(width, height);
+	wnd.rec_w = width;
+	wnd.rec_h = height;
+
 	return dstvid, vidset;	
 end
 
@@ -852,8 +880,6 @@ local function save_settings(wnd)
 end
 
 local function parse_connect(wnd, msg)
-	print(wnd, msg);
-
 -- msg format: 1..4d [port]
 -- existence of '.' or alpha, host
 -- existence of : port and host
@@ -863,7 +889,6 @@ local function parse_connect(wnd, msg)
 
 	wnd.input = nil;
 	wnd:resize(wnd.w, wnd.h);
-	
 end
 
 local function listen_host_dialog(wnd)
@@ -900,8 +925,16 @@ local function passpop(icn)
 	}
 
 	awbwman_dialog(desktoplbl("Set new passphrase:"),
-		buttons, {input = { w = 100, h = 20,
-			limit = 48, accept = 1, cancel = 2}}, false);
+		buttons, {
+			input = { 
+				w = 100, 
+				h = 20,
+				limit = 48, 
+				accept = 1, 
+				cancel = 2
+			}, 
+			sensitive = true},
+			false);
 end
 
 local function protopop(icn)
@@ -916,26 +949,6 @@ local function protopop(icn)
 		end
 	};
 
-	local vid, lines = desktoplbl(table.concat(lst, "\\n\\r"));
-	awbwman_popup(vid, lines, funtbl, {ref = icn.vid});
-end
-
-local function remotepop(icn)
-	local wnd = icn.parent.parent;
-	local lst = {
-		"Specify...",
-	};
-
-	local funtbl = {
-		function()
-			listen_host_dialog(wnd);	
-		end
-	};
-
---
--- populate list from database, say latest three or something,
--- and add here. Those should ( by default ) also re-use credentials (pwd, ..)
--- 
 	local vid, lines = desktoplbl(table.concat(lst, "\\n\\r"));
 	awbwman_popup(vid, lines, funtbl, {ref = icn.vid});
 end
@@ -1098,7 +1111,7 @@ function spawn_vidrec(use_remoting)
 		] = MESSAGE["VIDREC_PROTO"];
 
 		wnd.hoverlut[
-		(bar:add_icon("listen", "l", cfg.bordericns["save"], remotepop)).vid
+		(bar:add_icon("listen", "l", cfg.bordericns["save"], listenpop)).vid
 		] = MESSAGE["VIDREC_LISTEN"];
 	end
 

@@ -307,6 +307,7 @@ local function vncclient_connect(wnd, hoststr, pass)
 
 	local vnc = launch_avfeed(string.format(
 		"host=%s:port=%d:password=%s", host, port, pass),
+		"remoting",
 		function(source, status)
 			vncclient_event(wnd, source, status);
 		end);

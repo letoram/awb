@@ -13,6 +13,7 @@ local deffshdr = [[
 		gl_FragColor = col;
 	}
 ]];
+build_shader(nil, deffshdr, "default_target");
 
 local function getskipval(str)
 	if (str == "Automatic") then
@@ -1554,14 +1555,14 @@ function targetwnd_nonauth(source)
 		icon = "external",
 		source = wnd
 	};
+	wnd:rebuild_chain();
 
-	return cb;
+	return wnd, cb;
 end
 
 --
 -- Convenience "launcher" factory function
 --
-local first_init = false;
 
 function targetwnd_setup(game, factstr, coreargs)
 	local fn = string.format("coreopts/%s.cfg", game.target);
@@ -1578,11 +1579,6 @@ function targetwnd_setup(game, factstr, coreargs)
 				coreargs[k] = v;
 			end
 		end
-	end
-
-	if (first_init == false) then
-		first_init = true;
-		build_shader(nil, deffshdr, "default_target");
 	end
 
 	local captbl = launch_target_capabilities(game.target);

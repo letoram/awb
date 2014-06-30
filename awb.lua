@@ -394,20 +394,28 @@ end
 -- A target alloc loop that maps external connections
 -- to target windows, re-using the same key.
 --
+external_connections = {};
+
+function external_connected(source, status)
+	if (external_connections[source] == nil) then
+		target_alloc("awb", external_connected);
+		local wnd, cb = targetwnd_nonauth(source);
+		wnd:add_handler("on_destroy", function()
+			external_connections[source] = nil;
+		end);
+		external_connections[source] = cb;
+		wnd:rebuild_chain();
+	end
+
+	if (status.kind == "frameserver_terminated") then
+		external_connections[source] = nil;
+	end
+
+--	external_connections[source](source, status);
+end
+
 function setup_external_connections()
-	local running = false;
-	local forward = function() end
-
-	target_alloc("awb", function(source, status)
-		if (not running) then
-			running = true;
-			forward = targetwnd_nonauth(source);
-			setup_external_connections();
-		end
-
-		forward(source, status);
-	end);
-
+	target_alloc("awb", external_connected);
 end
 
 function launch_factorytgt(tbl, factstr, coreopts)
