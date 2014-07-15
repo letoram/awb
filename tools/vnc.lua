@@ -275,7 +275,7 @@ local function vncclient_event(wnd, source, status)
 		if (not wnd.connected) then
 			vncclient_setupwin(wnd, source);
 		end
-	elseif (status.kind == "frameserver_terminated") then
+	elseif (status.kind == "terminated") then
 		if (wnd.connected) then
 			wnd.connected = nil;
 			wnd.input = nil;
@@ -393,7 +393,7 @@ function spawn_vncclient(tbl, fact)
 		function(self)
 			dlgwin(wnd, "OK", "Specify host (host, host:port, :port)",
 			function(wnd, host)
-				dlgwin(wnd, "Connect", "Password:", 
+				dlgwin(wnd, "Connect", "Password:",
 				function(wnd, pass)
 					vncclient_connect(wnd, host, pass);
 				end);

@@ -1429,7 +1429,7 @@ function awbwnd_target(pwin, caps, factstr)
 			return;
 		end
 
-		if (status.kind == "frameserver_terminated") then
+		if (status.kind == "terminated") then
 			pwin:break_display();
 
 		elseif (status.kind == "message") then

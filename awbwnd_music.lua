@@ -24,13 +24,13 @@ local function filterpop(wnd, icn)
 
 	local labels = {};
 	for i=1,#opts do
-		table.insert(labels, string.sub(opts[i], 1, string.len(opts[i]) - 8)); 
+		table.insert(labels, string.sub(opts[i], 1, string.len(opts[i]) - 8));
 	end
 
 	local vid, lines = desktoplbl(table.concat(labels, "\\n\\r"));
 	awbwman_popup(vid, lines, function(ind)
 		last_audshader = "shaders/audio/" .. labels[ind] .. ".fShader";
-		local shid = load_shader(nil, last_audshader, "aud_" .. wnd.wndid); 
+		local shid = load_shader(nil, last_audshader, "aud_" .. wnd.wndid);
 		if (shid) then
 			image_shader(wnd.canvas.vid, shid);
 		end
@@ -51,8 +51,8 @@ local function playlistwnd(wnd)
 		return;
 	end
 
-	local nwin = awbwman_listwnd(menulbl("Playlist"), 
-		deffont_sz, linespace, {1.0}, wnd.playlist_full, 
+	local nwin = awbwman_listwnd(menulbl("Playlist"),
+		deffont_sz, linespace, {1.0}, wnd.playlist_full,
 		desktoplbl);
 	if (nwin == nil) then
 		return;
@@ -63,13 +63,13 @@ local function playlistwnd(wnd)
 
 	local bar = nwin:add_bar("tt", wnd.dir.tt.activeimg, wnd.dir.tt.activeimg,
 		wnd.dir.t.rsize, wnd.dir.t.bsize);
-	
+
 	local cfg = awbwman_cfg();
 	bar.hoverlut[
 		(bar:add_icon("sortaz", "l", cfg.bordericns["sortaz"],
 			function()
-				table.sort(wnd.playlist, function(a, b) 
-					return string.lower(a) < string.lower(b); 
+				table.sort(wnd.playlist, function(a, b)
+					return string.lower(a) < string.lower(b);
 				end);
 				table.sort(wnd.playlist_full, function(a, b)
 					return string.lower(a.name) < string.lower(b.name);
@@ -81,9 +81,9 @@ local function playlistwnd(wnd)
 	bar.hoverlut[
 	(bar:add_icon("sortza", "l", cfg.bordericns["sortza"],
 		function()
-			table.sort(wnd.playlist, function(a, b) 
-				return string.lower(a) > string.lower(b); 
-			end);	
+			table.sort(wnd.playlist, function(a, b)
+				return string.lower(a) > string.lower(b);
+			end);
 			table.sort(wnd.playlist_full, function(a, b)
 				return string.lower(a.name) > string.lower(b.name);
 			end);
@@ -92,7 +92,7 @@ local function playlistwnd(wnd)
 	)).vid] = MESSAGE["HOVER_SORTZA"];
 
 	bar.hoverlut[
-	(bar:add_icon("shuffle", "l", cfg.bordericns["shuffle"], 
+	(bar:add_icon("shuffle", "l", cfg.bordericns["shuffle"],
 		function()
 			local newlist_wnd = {};
 			local newlist_full = {};
@@ -102,11 +102,11 @@ local function playlistwnd(wnd)
 				local entry = table.remove(wnd.playlist_full, ind);
 				table.insert(newlist_full, entry);
 				entry = table.remove(wnd.playlist, ind);
-				table.insert(newlist_wnd, entry); 
+				table.insert(newlist_wnd, entry);
 			end
 
 			wnd.playlist_full = newlist_full;
-			nwin.tbl = newlist_full; 
+			nwin.tbl = newlist_full;
 			wnd.playlist = newlist_wnd;
 			wnd.playlist_ofs = 1;
 			nwin:force_update();
@@ -130,9 +130,9 @@ local function playlistwnd(wnd)
 			nwin:force_update();
 
 			if (nwin.selline == wnd.playlist_ofs) then
-				wnd.playlist_ofs = wnd.playlist_ofs > 1 
+				wnd.playlist_ofs = wnd.playlist_ofs > 1
 				and wnd.playlist_ofs - 1 or 1;
-				wnd.callback(wnd.recv, {kind = "frameserver_terminated"});
+				wnd.callback(wnd.recv, {kind = "terminated"});
 
 			elseif (nwin.selline < wnd.playlist_ofs) then
 				wnd.playlist_ofs = wnd.playlist_ofs - 1;
@@ -145,7 +145,7 @@ local function playlistwnd(wnd)
 	local sel = color_surface(1, 1, 40, 128, 40);
 	nwin.activesel = sel;
 	link_image(sel, nwin.anchor);
-		
+
 -- need one cursor to indicate currently playing
 	link_image(sel, nwin.canvas.vid);
 	image_inherit_order(sel, true);
@@ -153,7 +153,7 @@ local function playlistwnd(wnd)
 	blend_image(sel, 0.4);
 	image_clip_on(sel, CLIP_SHALLOW);
 	image_mask_set(sel, MASK_UNPICKABLE);
-	
+
 	nwin.update_cursor = function()
 -- find y
 		local ind = wnd.playlist_ofs - (nwin.ofs - 1);
@@ -187,7 +187,7 @@ local function awnd_callback(pwin, source, status)
 	end
 
 -- update_canvas will delete this one
-	if (status.kind == "frameserver_terminated") then
+	if (status.kind == "terminated") then
 		pwin.playlist_ofs = pwin.playlist_ofs + 1;
 		pwin.playlist_ofs = pwin.playlist_ofs > #pwin.playlist and 1 or
 			pwin.playlist_ofs;
@@ -197,7 +197,7 @@ local function awnd_callback(pwin, source, status)
 		end
 
 		pwin.recv = nil;
-		pwin.controlid = load_movie(pwin.playlist_full[pwin.playlist_ofs].name, 
+		pwin.controlid = load_movie(pwin.playlist_full[pwin.playlist_ofs].name,
 			FRAMESERVER_NOLOOP, pwin.callback, 1, "novideo=true");
 		pwin:update_canvas(pwin.controlid);
 	end
@@ -234,8 +234,8 @@ local function awnd_setup(pwin, bar)
 
 	local canvash = {
 		name  = "musicplayer" .. "_canvash",
-		own   = function(self, vid) 
-							return vid == pwin.canvas.vid; 
+		own   = function(self, vid)
+							return vid == pwin.canvas.vid;
 						end,
 		click = function() pwin:focus(); end
 	};
@@ -245,7 +245,7 @@ local function awnd_setup(pwin, bar)
 
 --
 -- keep them separate so we can reuse for listwindow
--- 
+--
 	pwin.playlist = {};
 	pwin.playlist_full = {};
 
@@ -253,7 +253,7 @@ local function awnd_setup(pwin, bar)
 		for i,v in ipairs(pwin.playlist_full) do
 			if (self.name == v.name) then
 				pwin.playlist_ofs = i - 1;
-				pwin.callback(pwin.recv, {kind = "frameserver_terminated"});
+				pwin.callback(pwin.recv, {kind = "terminated"});
 			end
 		end
 	end
@@ -271,7 +271,7 @@ local function awnd_setup(pwin, bar)
 -- if not playing, launch a new session
 		if (pwin.recv == nil) then
 			pwin.playlist_ofs = 1;
-			local vid = 
+			local vid =
 				load_movie(item, FRAMESERVER_NOLOOP, pwin.callback, 1, "novideo=true");
 			pwin:update_canvas(vid);
 		end
@@ -284,7 +284,7 @@ local function awnd_setup(pwin, bar)
 	local cfg = awbwman_cfg();
 
 	bar.hoverlut[
-	(bar:add_icon("playlist", "r", cfg.bordericns["list"], 
+	(bar:add_icon("playlist", "r", cfg.bordericns["list"],
 		function() playlistwnd(pwin); end)).vid
 	] = MESSAGE["HOVER_PLAYLIST"];
 
@@ -306,7 +306,7 @@ local function awnd_setup(pwin, bar)
 
 	bar.hoverlut[
 	(bar:add_icon("filters", "r", cfg.bordericns["filter"],
-		function(self) filterpop(pwin, self); end)).vid] = 
+		function(self) filterpop(pwin, self); end)).vid] =
 	MESSAGE["HOVER_AUDIOFILTER"];
 
 -- shared with video windows etc.

@@ -1,16 +1,16 @@
 --
 -- AWB Frameserver Media Window
--- For a 3D session, we set up a FBO rendertarget 
+-- For a 3D session, we set up a FBO rendertarget
 -- and connect the output to the canvas along with some buttons to
 -- navigate and control basic lighting.
--- 
+--
 -- For Vidcap, we add a popup button to select device / index
 -- and restart the frameserver each time.
 --
--- Adds a "play/pause" and possibly others 
+-- Adds a "play/pause" and possibly others
 -- based on frameserver capabilities.
 --
--- Drag to Desktop behavior is link to recreate / reopen 
+-- Drag to Desktop behavior is link to recreate / reopen
 -- or add a screenshot
 --
 -- Note: Should possibly split this into a video and audio player
@@ -64,8 +64,8 @@ end
 
 function awbmedia_seekstep(pwin)
 	if (pwin.recv) then
-		local tmpvol = awbwman_cfg().global_vol * pwin.mediavol; 
-		audio_gain(pwin.recv, tmpvol); -- reset chain 
+		local tmpvol = awbwman_cfg().global_vol * pwin.mediavol;
+		audio_gain(pwin.recv, tmpvol); -- reset chain
 		audio_gain(pwin.recv, 0.0, 5); -- fade out / fade in to dampen "screech"
 		tmpvol = tmpvol < 0 and 0 or tmpvol;
 		audio_gain(pwin.recv, tmpvol, 20);
@@ -90,7 +90,7 @@ local function submenupop(wnd, list, trig, key, reficn)
 		else
 			lbllist[i] = list[i];
 		end
-	end	
+	end
 
 	local cbtbl = {};
 	local cprops = image_surface_properties(wnd.canvas.vid);
@@ -103,7 +103,7 @@ local function submenupop(wnd, list, trig, key, reficn)
 				trig[i](wnd);
 			else
 				if (wnd.filters[key] == list[i]) then
-					wnd.filters[key] = nil; 
+					wnd.filters[key] = nil;
 				else
 					wnd.filters[key] = list[i];
 				end
@@ -135,7 +135,7 @@ function awbwmedia_filterpop(wnd, icn)
 	local dlgtbl = {
 		function() submenupop(wnd, {"CRT"}, {function() fltpop(wnd,
 		wnd.filters.displayctx); end}, "display", icn.vid); end,
-		function() submenupop(wnd, 
+		function() submenupop(wnd,
 			{"SABR", "xBR", "Linear", "Bilinear", "Trilinear"},
 			{function() fltpop(wnd, wnd.filters.upscalerctx); end,
 			 function() fltpop(wnd, wnd.filters.upscalerctx); end},
@@ -180,13 +180,13 @@ function awbmedia_update_streamstats(win, stat)
 	show_image(win.progr_label, 1);
 	image_mask_set(win.progr_label, MASK_UNPICKABLE);
 
-	resize_image(win.poscaret, w * stat.completion, 
+	resize_image(win.poscaret, w * stat.completion,
 		image_surface_properties(win.poscaret).height);
 end
 
 local seektbl = {
-	LEFT = -10, 
-	RIGHT = 10, 
+	LEFT = -10,
+	RIGHT = 10,
 	UP = 30,
 	DOWN = -30,
 	PGUP = 600,
@@ -201,8 +201,8 @@ function awbmedia_add_fsrvctrl(pwin, bar)
 	local cfg = awbwman_cfg();
 
 	bar.hoverlut[
-		(bar:add_icon("pause", "l", cfg.bordericns["pause"], 
-	function(self) 
+		(bar:add_icon("pause", "l", cfg.bordericns["pause"],
+	function(self)
 		if (pwin.paused) then
 			pwin.paused = nil;
 			resume_movie(pwin.controlid);
@@ -214,10 +214,10 @@ function awbmedia_add_fsrvctrl(pwin, bar)
 		end
 	end)).vid] = MESSAGE["HOVER_PLAYPAUSE"];
 
-	bar:add_icon("volume", "r", cfg.bordericns["volume"], 
+	bar:add_icon("volume", "r", cfg.bordericns["volume"],
 	function(self)
 		pwin:focus();
-		awbwman_popupslider(0.01, pwin.mediavol, 1.0, 
+		awbwman_popupslider(0.01, pwin.mediavol, 1.0,
 			function(val)
 				pwin:set_mvol(val);
 			end, {ref = self.vid}
@@ -229,7 +229,7 @@ function awbmedia_add_fsrvctrl(pwin, bar)
 	image_sharestorage(bar.activeimg, fillcol);
 	local caretcol = color_surface(8, 16, cfg.col.dialog_caret.r,
 		cfg.col.dialog_caret.g, cfg.col.dialog_caret.b);
-	
+
 	local fillicn = bar:add_icon("status", "fill", fillcol,
 	function(self, x, y, bx, by)
 		local props = image_surface_properties(self.vid);
@@ -238,35 +238,35 @@ function awbmedia_add_fsrvctrl(pwin, bar)
 		if (valid_vid(pwin.controlid)) then
 			target_seek(pwin.controlid, rel, 0);
 		else
-			target_seek(pwin.canvas.vid, rel, 0); 
+			target_seek(pwin.canvas.vid, rel, 0);
 		end
 		awbmedia_seekstep(pwin);
 	end);
 
 	pwin.mediavol = 1.0;
-	
-	pwin.on_resize = 
+
+	pwin.on_resize =
 	function(wnd, winw, winh, cnvw, cnvh)
 		if (wnd.laststat ~= nil) then
 			awbmedia_update_streamstats(wnd, wnd.laststat);
 		end
 	end
-	
+
 -- seek controls
-	pwin.input = 
+	pwin.input =
 	function(self, iotbl)
 		if (iotbl.active == false or iotbl.lutsym == nil) then
 			return;
 		end
-			
-		local id = pwin.controlid ~= nil 
+
+		local id = pwin.controlid ~= nil
 			and pwin.controlid or pwin.canvas.vid;
 
 		local sym = iotbl.lutsym;
 		if (awbwman_cfg().meta.shift) then
 			sym = "SHIFT" .. sym;
 		end
-			
+
 		local step = seektbl[sym];
 		if (step ~= nil) then
 			target_seek(id, step, 1);
@@ -274,13 +274,13 @@ function awbmedia_add_fsrvctrl(pwin, bar)
 		end
 	end
 
-	pwin.set_mvol = 
+	pwin.set_mvol =
 	function(self, val)
 		pwin.mediavol = val;
 		local tmpvol = awbwman_cfg().global_vol * pwin.mediavol;
 		tmpvol = tmpvol < 0 and 0 or tmpvol;
 		if (pwin.recv ~= nil) then
-			audio_gain(pwin.recv, tmpvol);	
+			audio_gain(pwin.recv, tmpvol);
 		end
 	end
 
@@ -318,7 +318,7 @@ local function vcap_setup(pwin)
 						pwin:resize(status.width, status.height, true);
 					end
 
-				elseif (status.kind == "frameserver_terminated") then
+				elseif (status.kind == "terminated") then
 					pwin:break_display();
 				end
 			end);
@@ -332,7 +332,7 @@ end
 -- the final canvas composition must be a FBO
 --
 function awbwmedia_filterchain(pwin)
--- first time calling, and this will need 
+-- first time calling, and this will need
 -- to be managed / deleted manually
 	if (pwin.controlid == nil) then
 		pwin.controlid  = pwin.canvas.vid;
@@ -374,7 +374,7 @@ function awbwmedia_filterchain(pwin)
 	image_tracetag(dstres, "filterchain_core");
 	image_sharestorage(pwin.controlid, dstres);
 
-	image_shader(dstres, pwin.def_shader ~= nil and 
+	image_shader(dstres, pwin.def_shader ~= nil and
 		pwin.def_shader or "DEFAULT");
 
 	table.insert(pwin.filtertmp, dstres);
@@ -396,15 +396,15 @@ function awbwmedia_filterchain(pwin)
 		elseif (f == "Trilinear") then
 			image_texfilter(dstres, FILTER_TRILINEAR);
 
--- since shaders are "per target" 
+-- since shaders are "per target"
 -- we need to load / rebuild and tagging with the wndid
 		elseif (f == "SABR") then
-			dstres, ctx = upscaler.sabr.setup(pwin.filters.upscalerctx, 
+			dstres, ctx = upscaler.sabr.setup(pwin.filters.upscalerctx,
 				dstres, "SABR_"..tostring(pwin.wndid),
 				store_sz, in_sz, out_sz, pwin.filters.upscaleopt);
 			pwin.filters.upscalerctx = ctx;
 			table.insert(pwin.filtertmp, dstres);
-	
+
 		elseif (f == "xBR") then
  			dstres, ctx = upscaler.xbr.setup(pwin.filters.upscalerctx,
 				dstres, "XBR_"..tostring(pwin.wndid),
@@ -423,22 +423,22 @@ function awbwmedia_filterchain(pwin)
 		local f = pwin.filters.effect;
 		if (f == "Glow") then
 			dstres, ctx = effect.glow.setup(pwin.filters.effectctx,
-				dstres, "GLOW_" .. tostring(pwin.wndid), 
+				dstres, "GLOW_" .. tostring(pwin.wndid),
 				store_sz, in_sz, out_sz, pwin.filters.effectopt);
 			pwin.filters.effectctx = ctx;
 			if (ctx == nil) then pwin.filters.effect = nil; end
 
 		elseif (f == "Trails") then
 			dstres, ctx = effect.trails.setup(pwin.filters.effectctx,
-				pwin.controlid, -- need access to the original source				
-				dstres, "TRAILS_" .. tostring(pwin.wndid), 
+				pwin.controlid, -- need access to the original source
+				dstres, "TRAILS_" .. tostring(pwin.wndid),
 				store_sz, in_sz, out_sz, pwin.filters.effectopt);
 			pwin.filters.effectctx = ctx;
 			if (ctx == nil) then pwin.filters.effect = nil; end
 
 		elseif (f == "GlowTrails") then
 			dstres, ctx = effect.glowtrails.setup(pwin.filters.effectctx,
-				pwin.controlid, "GLOWTRAILS_" .. tostring(pwin.wndid), 
+				pwin.controlid, "GLOWTRAILS_" .. tostring(pwin.wndid),
 				store_sz, in_sz, out_sz, pwin.filters.effectopt);
 			pwin.filters.effectctx = ctx;
 			if (ctx == nil) then pwin.filters.effect = nil; end
@@ -456,10 +456,10 @@ function awbwmedia_filterchain(pwin)
 		local f = pwin.filters.display;
 
 		if (f == "CRT") then
-			dstres, ctx = crtcont.setup(pwin.filters.displayctx, 
+			dstres, ctx = crtcont.setup(pwin.filters.displayctx,
 				dstres, "CRT_"..tostring(pwin.wndid),store_sz,
 				in_sz, out_sz, pwin.filters_displayopt);
-	
+
 			pwin.filters.displayctx = ctx;
 			table.insert(pwin.filtertmp, dstres);
 		end
@@ -472,16 +472,16 @@ function awbwmedia_filterchain(pwin)
 	end
 
 	pwin.on_fullscreen = function(self, vid, state)
-		if (pwin.filters.effect == "Glow" or 
+		if (pwin.filters.effect == "Glow" or
 			pwin.filters.effect == "GlowTrails") then
 			image_mask_clear(pwin.controlid, MASK_OPACITY);
 			show_image(pwin.controlid);
 		end
 	end
 
--- propagate to other recipients 
+-- propagate to other recipients
 	for k,v in ipairs(pwin.on_update) do
-		v(v, pwin, dstres);	
+		v(v, pwin, dstres);
 	end
 end
 
@@ -499,18 +499,18 @@ local function vmedia_callback(pwin, source, status)
 		local tbl = image_surface_properties(pwin.anchor);
 
 		if (tbl.x + status.width > VRESW) then
-			pwin:resize(VRESW - tbl.x, (VRESW - tbl.x) * 
+			pwin:resize(VRESW - tbl.x, (VRESW - tbl.x) *
 				(status.height / status.width), true);
-	
+
 		elseif (tbl.y + status.height > VRESH) then
-			pwin:resize(VRESW - tbl.x, (VRESW - tbl.x) * 
+			pwin:resize(VRESW - tbl.x, (VRESW - tbl.x) *
 					(status.height / status.width), true);
-	
+
 		else
 			pwin:resize(status.width, status.height, true);
 		end
 
-	elseif (status.kind == "frameserver_terminated") then
+	elseif (status.kind == "terminated") then
 		pwin:break_display();
 
 	elseif (status.kind == "streamstatus") then
@@ -518,17 +518,17 @@ local function vmedia_callback(pwin, source, status)
 	end
 end
 
-function awbwnd_media(pwin, source, options) 
+function awbwnd_media(pwin, source, options)
 	local callback;
-	local kind = pwin.kind; 
-	
+	local kind = pwin.kind;
+
 	pwin.filters = {};
 	pwin.hoverlut = {};
 
 	pwin.rebuild_chain = awbwmedia_filterchain;
 	pwin.break_display = awbwnd_breakdisplay;
 
-	pwin:add_handler("on_destroy", 
+	pwin:add_handler("on_destroy",
 		function(self)
 			if (pwin.filtertmp ~= nil) then
 				for i, v in ipairs(pwin.filtertmp) do
@@ -544,18 +544,18 @@ function awbwnd_media(pwin, source, options)
 	);
 
 -- resized for the costly functions
-	pwin.on_resized = 
+	pwin.on_resized =
 	function(wnd, winw, winh, cnvw, cnvh)
 		pwin:rebuild_chain();
 	end;
 
 	local canvash = {
 		name  = kind .. "_canvash",
-		own   = function(self, vid) 
-							return vid == pwin.canvas.vid; 
+		own   = function(self, vid)
+							return vid == pwin.canvas.vid;
 						end,
-		click = function() 
-							pwin:focus(); 
+		click = function()
+							pwin:focus();
 						end
 	}
 
@@ -569,21 +569,21 @@ function awbwnd_media(pwin, source, options)
 
 	local cfg = awbwman_cfg();
 
-	bar.hoverlut[ 
+	bar.hoverlut[
 	(bar:add_icon("clone", "r", cfg.bordericns["clone"],
-		function() datashare(pwin); end)).vid] = 
+		function() datashare(pwin); end)).vid] =
 	MESSAGE["HOVER_CLONE"];
 
 	bar.hoverlut[
-	(bar:add_icon("filters", "r", cfg.bordericns["filter"], 
-		function(self) awbwmedia_filterpop(pwin, self); end)).vid] = 
+	(bar:add_icon("filters", "r", cfg.bordericns["filter"],
+		function(self) awbwmedia_filterpop(pwin, self); end)).vid] =
 	MESSAGE["HOVER_FILTER"];
 
 	if (kind == "capture") then
 		vcap_setup(pwin);
 
 	elseif (kind == "static") then
-		pwin.callback = 
+		pwin.callback =
 		function(source, status)
 			if (pwin.alive == false) then
 				return;
@@ -597,8 +597,8 @@ function awbwnd_media(pwin, source, options)
 
 	elseif (kind == "frameserver") then
 		awbmedia_add_fsrvctrl(pwin, bar);
-	
-		pwin.callback = 
+
+		pwin.callback =
 		function(source, status)
 			vmedia_callback(pwin, source, status);
 		end
@@ -606,5 +606,5 @@ function awbwnd_media(pwin, source, options)
 		pwin.helpmsg = MESSAGE["HELP_VMEDIA"];
 	end
 
-	return pwin.callback; 
+	return pwin.callback;
 end
