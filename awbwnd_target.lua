@@ -975,9 +975,18 @@ local function setcoreopt(wnd, key, value)
 end
 
 local function canvas_tagh(wnd, tag)
+	local lbls = {"Bond Target"};
+	local ptrs = {function()
+		if (image_state(tag.source.recv) == "frameserver" and
+				image_state(wnd.recv) == "frameserver") then
+			bond_target(tag.source.recv, wnd.recv);
+		end
+	end};
+
 	if (tag.source.alive and tag.source.state_size and
 		tag.source.state_size == wnd.state_size) then
-		bond_target(tag.source.recv, wnd.recv);
+		local vid, lines = desktoplbl(table.concat(lbls, "\\n\\r"));
+		awbwman_popup(vid, lines, ptrs);
 	end
 
 	tag:drop();
@@ -1487,7 +1496,7 @@ function awbwnd_target(pwin, caps, factstr)
 				pwin.state_size = status.state_size;
 			end
 		else
-			print(status.kind);
+			--print(status.kind);
 		end
 	end
 
