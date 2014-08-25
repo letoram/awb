@@ -1151,6 +1151,10 @@ local function load_settings(pwin, gametbl)
 	end
 end
 
+local function subwin_cb(source, status)
+	print(status.kind);
+end
+
 --
 -- Target window
 -- Builds upon a spawned window (pwin) and returns a
@@ -1458,6 +1462,9 @@ function awbwnd_target(pwin, caps, factstr)
 
 		elseif (status.kind == "frame") then
 -- do nothing
+
+		elseif (status.kind == "segment_request") then
+			local vid = target_alloc(source, subwin_cb, status.segid);
 
 		elseif (status.kind == "resized") then
 			pwin.mirrored = status.mirrored;
