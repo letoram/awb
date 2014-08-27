@@ -1464,7 +1464,15 @@ function awbwnd_target(pwin, caps, factstr)
 -- do nothing
 
 		elseif (status.kind == "segment_request") then
-			local vid = target_alloc(source, subwin_cb, status.segid);
+			local vid = target_alloc(source, subwin_cb, status.reqid);
+			show_image(vid);
+
+			local wnd = awbwman_customwnd(function(pwin, source)
+				pwin:update_canvas(vid);
+				end, desktoplbl("debug"), vid, {});
+			if (wnd) then
+				pwin:add_cascade(wnd);
+			end
 
 		elseif (status.kind == "resized") then
 			pwin.mirrored = status.mirrored;
