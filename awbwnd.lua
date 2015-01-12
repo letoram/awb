@@ -706,7 +706,7 @@ local function awbwnd_hide(self, dstx, dsty)
 end
 
 function awbwnd_subwin_inputfunc(self, iotbl)
-	if (iotbl.active == false and iotbl.utf8 == "") then
+	if (iotbl.active == false) then
 		return;
 	end
 
@@ -770,10 +770,11 @@ function awbwnd_subwin_inputfunc(self, iotbl)
 
 	else
 		local keych = iotbl.utf8;
-		if (keych == nil) then
+		if (keych == nil or keych == '') then
 			return;
 		end
 
+		print(keych, iotbl.keysym);
 		self.msg, nch = string.insert(self.msg,
 			keych, self.caretpos, self.nchars);
 		self.caretpos = self.caretpos + nch;

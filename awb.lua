@@ -26,6 +26,11 @@ function menulbl(text, color)
 	if (color == nil) then
 		color = "\\#0055a9"
 	end
+
+	if (text) then
+		text = string.gsub(text, "\\", "\\\\");
+	end
+
 	return render_text(string.format("\\#0055a9\\f%s,%d %s",
 		deffont, deffont_sz, text));
 end
@@ -183,7 +188,7 @@ function awb()
 	system_load("scripts/3dsupport.lua")();
 	setup_3dsupport(true);
 
-	system_load("scripts/resourcefinder.lua")();
+--	system_load("scripts/resourcefinder.lua")();
 
 -- mouse abstraction layer
 -- (callbacks for click handlers, motion events etc.)
@@ -208,7 +213,7 @@ function awb()
 
 -- check that there are things that can be launched, else
 -- we probably have an incomplete installation / setup
-	local gametbl = list_games( {} );
+	local gametbl = list_targets( {} );
 	if (gametbl == nil or #gametbl == 0) then
 		show_gamewarning();
 	end
@@ -340,8 +345,19 @@ function map_inputs()
 		kbdbinds["F6"]     = debug.debug;
 		kbdbinds["F10"]    = mouse_dumphandlers;
 		kbdbinds["F8"]     = function()
-			local outp = fill_surface(VRESW, VRESH, 0, 0, 0, VRESW, VRESH);
-			define_recordtarget(outp, WORLDID, {}, "noaudio");
+			if (inrec ~= nil) then
+				delete_image(inrec);
+				inrec = nil;
+			else
+				inrec = alloc_surface(VRESW, VRESH);
+				local nh = null_surface(VRESW, VRESH);
+				show_image(nh);
+				image_sharestorage(WORLDID, nh);
+				zap_resource("recordings/dump.mkv");
+				define_recordtarget(inrec, "recordings/dump.mkv",
+					"vpreset=8:noaudio:fps=25", {nh}, {}, RENDERTARGET_DETACH,
+					RENDERTARGET_NOSCALE, -1, function() end);
+			end
 		end
 
 		kbdbinds["F4"]     = function()
@@ -367,13 +383,13 @@ function map_inputs()
 				Untrace();
 			end
 		end
+		kbdbinds["F7"] = dumpvid;
 	end
 
 	kbdbinds["LCTRL"]  = awbwman_toggle_mousegrab;
 	kbdbinds["ESCAPE"] = awbwman_cancel;
 	kbdbinds["F11"] = awbwman_gather_scatter;
 	kbdbinds["F12"]	= awbwman_shadow_nonfocus;
-	kbdbinds["F7"] = dumpvid;
 end
 
 --
@@ -394,10 +410,13 @@ end
 -- A target alloc loop that maps external connections
 -- to target windows, re-using the same key.
 --
+-- This is slightly broken at the moment as we should
+-- check what the window attempts to register itself as
+-- and use that to map to the corresponding window class.
+--
 external_connections = {};
 
 function external_connected(source, status)
-
 	if (external_connections[source] == nil) then
 		target_alloc("awb", external_connected);
 		local wnd, cb = targetwnd_nonauth(source);
@@ -409,6 +428,10 @@ function external_connected(source, status)
 	end
 
 	if (status.kind == "terminated") then
+		if (external_connections[source]) then
+			external_connections[source][2](source, status);
+		end
+
 		external_connections[source] = nil;
 
 	elseif (status.kind == "registered") then
@@ -699,7 +722,7 @@ end
 
 function gamelist_wnd(selection)
 	local tgtname = selection.name;
-	local tgttotal = list_games({target = tgtname});
+	local tgttotal = target_configurations(tgtname);
 	gamelist_tblwnd(tgttotal, tgtname);
 end
 
@@ -1124,8 +1147,8 @@ function spawn_boing(caption)
 	a.name = "Boing!";
 	a.kind = sysicons.boing;
 
-	local boing = load_shader("shaders/fullscreen/default.vShader",
-		"shaders/boing.fShader", "boing" .. oval, {});
+	local boing = load_shader(nil, "shaders/boing.fShader",
+		"boing" .. oval, {});
 
 	local props = image_surface_properties(a.canvas.vid);
 		a.canvas.resize = function(self, neww, newh)
@@ -1163,6 +1186,10 @@ function translate_adev(iotbl)
 	end
 
 	return iotbl;
+end
+
+function awb_display_state(state, data)
+	awbwman_displaystate(state, data);
 end
 
 function awb_input(iotbl)

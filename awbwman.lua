@@ -30,6 +30,11 @@ local awb_cfg = {
 	spawny      = 20,
 	animspeed   = 10,
 	bgopa       = 0.8,
+
+	dispw       = VRESW,
+  disph       = VRESH,
+
+	displays    = {},
 	meta        = {},
 	hidden      = {},
 	global_input= {},
@@ -774,8 +779,13 @@ function awbwman_dialog(caption, buttons, options, modal)
 		wheight = wheight + 20;
 		cpyofs  = -20;
 
-		wnd.inputfield = awbwman_inputattach( function(self) wnd.msg = self.msg; end,
-		desktoplbl, options.input );
+		wnd.inputfield = awbwman_inputattach(
+		function(self)
+			wnd.msg = self.msg;
+		end,
+		desktoplbl, options.input
+		);
+
 		wnd.input  = function(self, tbl) wnd.inputfield:input(tbl); end
 		wnd.inputfield.accept = function(self)
 			buttons[options.input.accept].trigger(wnd);
@@ -1934,7 +1944,8 @@ function awbwman_mousepop(reficn)
 		"Acceleration",
 		"Acceleration (X)",
 		"Acceleration (Y)",
-		"Double-Click"
+		"Double-Click",
+		"Toggle Lock"
 	};
 
 	local vid, lines = desktoplbl(table.concat(lst, "\\n\\r"));
@@ -1965,6 +1976,7 @@ function awbwman_mousepop(reficn)
 		end, {ref = reficn});
 	end
 
+	resfun[5] = awbwman_toggle_mousegrab;
 	awbwman_popup(vid, lines, resfun, {ref = reficn});
 end
 
@@ -2286,6 +2298,23 @@ function awbwman_input(iotbl, keysym)
 	end
 end
 
+function awbwman_expanddisplay(state, w, h)
+-- video_display_size to the aggregated size
+end
+
+function awbwman_shrinkdisplay(state, w, h)
+-- video_display_size to the aggregated size
+-- except for screen mapped windows
+end
+
+function awbwman_displaystate(state, data)
+	if (state == "added") then
+
+	elseif (state == "removed") then
+
+	end
+end
+
 function awbwman_hoverhint(msg)
 	local lbl = desktoplbl(msg);
 	local props = image_surface_properties(lbl);
@@ -2369,7 +2398,12 @@ function awbwman_loadanalog(inp)
 		return;
 	end
 
-	local t = system_load(inp)();
+	local t = system_load(inp, 0);
+	if (t == nil) then
+		return;
+	end
+
+	t = t();
 	if (t == nil) then
 		return;
 	end

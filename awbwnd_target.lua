@@ -1504,6 +1504,7 @@ function awbwnd_target(pwin, caps, factstr)
 			force_image_blend(pwin.canvas.vid, BLEND_NONE);
 
 		elseif (status.kind == "state_size") then
+			print(status.state_size, "state size hint");
 			pwin:drop_statectls();
 
 			if (status.state_size > 0) then
