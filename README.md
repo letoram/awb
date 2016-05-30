@@ -3,6 +3,11 @@ AWB
 
 Arcan Workbench, Desktop- like script for Arcan
 
+*Note that this project is no longer maintained. It worked up until Arcan 0.4,
+but the drastic changes to how the database for launch targets are managed,
+and some minor adjustments to rendertargets, this will flat out fail to work
+or die on script errors randomly.*
+
 This is primarily a sandbox for testing out new ideas and for finding
 rough spots in the Lua API and not intended as desktop environment or
 as a shining example on how to code such a thing in Arcan. Some of the
