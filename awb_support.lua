@@ -3,8 +3,8 @@
 --
 --
 
--- This require some explanation, by default, the 
--- "tonumber/..." classes of functions seriously takes locale into 
+-- This require some explanation, by default, the
+-- "tonumber/..." classes of functions seriously takes locale into
 -- account. This breaks heavily when linked with some libs that
 -- actually manipulate radix throughout program lifecycle, when
 -- can happen in window managers /etc. that switch locale
@@ -29,7 +29,7 @@ function tonumber_rdx(ins, reccall)
 	for i=1,len do
 		if (string.byte(ins, i) == rdx_in) then -- ","
 			if (i > 1) then
-				ins = string.sub(ins, 1, i-1) .. 
+				ins = string.sub(ins, 1, i-1) ..
 					string.char(rdx_out) .. string.sub(ins, i+1);
 			else
 				ins = string.char(rdx_out) .. string.sub(ins, 2);
@@ -58,7 +58,7 @@ function tostring_rdx(inv)
 	for i=1,len do
 		if (string.byte(outs, i) == rdx_in) then -- ","
 			if (i > 1) then
-				outs = string.sub(outs, 1, i-1) .. 
+				outs = string.sub(outs, 1, i-1) ..
 					string.char(rdx_out) .. string.sub(outs, i+1);
 			else
 				outs = string.char(rdx_out) .. string.sub(outs, 2);
@@ -85,7 +85,7 @@ function string.utf8forward(src, ofs)
 	if (ofs <= string.len(src)) then
 		repeat
 			ofs = ofs + 1;
-		until (ofs > string.len(src) or 
+		until (ofs > string.len(src) or
 			utf8kind( string.byte(src, ofs) ) < 2);
 	end
 
@@ -100,7 +100,7 @@ function string.utf8lalign(src, ofs)
 end
 
 function string.utf8ralign(src, ofs)
-	while (ofs <= string.len(src) and string.byte(src, ofs)  
+	while (ofs <= string.len(src) and string.byte(src, ofs)
 		and utf8kind(string.byte(src, ofs)) == 2) do
 		ofs = ofs + 1;
 	end
@@ -117,7 +117,7 @@ function string.translateofs(src, ofs, beg)
 		if (kind < 2) then
 			ofs = ofs - 1;
 		end
-		
+
 		i = i + 1;
 	end
 
@@ -128,7 +128,7 @@ function string.utf8len(src, ofs)
 	local i = 0;
 	local rawlen = string.len(src);
 	ofs = ofs < 1 and 1 or ofs
-	
+
 	while (ofs <= rawlen) do
 		local kind = utf8kind( string.byte(src, ofs) );
 		if (kind < 2) then
@@ -142,23 +142,28 @@ function string.utf8len(src, ofs)
 end
 
 function string.insert(src, msg, ofs, limit)
-	local xlofs = src:translateofs(ofs, 1);
+	if (type(src) ~= "string") then
+		print(debug.traceback());
+		return;
+	end
+
+	local xlofs = string.translateofs(src, ofs, 1);
 	if (limit == nil) then
 		limit = string.len(msg) + ofs;
 	end
-	
+
 	if ofs + string.len(msg) > limit then
 		msg = string.sub(msg, 1, limit - ofs);
 
 -- align to the last possible UTF8 char..
-		
-		while (string.len(msg) > 0 and 
+
+		while (string.len(msg) > 0 and
 			utf8kind( string.byte(msg, string.len(msg))) == 2) do
 			msg = string.sub(msg, 1, string.len(msg) - 1);
 		end
 	end
-	
-	return string.sub(src, 1, xlofs - 1) .. msg .. 
+
+	return string.sub(src, 1, xlofs - 1) .. msg ..
 		string.sub(src, xlofs, string.len(src)), string.len(msg);
 end
 
@@ -167,7 +172,7 @@ function string.delete_at(src, ofs)
 	if (fwd ~= ofs) then
 		return string.sub(src, 1, ofs - 1) .. string.sub(src, fwd, string.len(src));
 	end
-	
+
 	return src;
 end
 
@@ -220,13 +225,13 @@ function string.split(instr, delim)
 	local res = {};
 	local strt = 1;
 	local delim_pos, delim_stp = string.find(instr, delim, strt);
-	
+
 	while delim_pos do
 		table.insert(res, string.sub(instr, strt, delim_pos-1));
 		strt = delim_stp + 1;
 		delim_pos, delim_stp = string.find(instr, delim, strt);
 	end
-	
+
 	table.insert(res, string.sub(instr, strt));
 	return res;
 end

@@ -31,8 +31,9 @@ function menulbl(text, color)
 		text = string.gsub(text, "\\", "\\\\");
 	end
 
-	return render_text(string.format("\\#0055a9\\f%s,%d %s",
-		deffont, deffont_sz, text));
+	local vid, lineh = render_text(
+		string.format("\\#0055a9\\f%s,%d %s", deffont, deffont_sz, text));
+	return vid;
 end
 
 function desktoplbl(text, len)
@@ -46,8 +47,9 @@ function desktoplbl(text, len)
 	end
 
 	text = text == nil and "" or text;
-	return render_text(string.format("\\#ffffff\\f%s,%d %s",
-	deffont, deffont_sz, text), linespace);
+	local vid, lineh = render_text(
+		string.format("\\#ffffff\\f%s,%d %s",deffont, deffont_sz, text), linespace);
+	return vid, lineh;
 end
 
 -- input is trusted, i.e. data supposedly comes from
@@ -156,6 +158,7 @@ function load_aux()
 	system_load("awbwnd_music.lua")();
 	system_load("awbwnd_modelview.lua")();
 	system_load("awbwnd_target.lua")();
+	system_load("awbwnd_cli.lua")();
 
 	system_load("awbwman.lua")();
 
@@ -168,8 +171,9 @@ function load_aux()
 	system_load("tools/vnc.lua")();
 end
 
-function awb()
+function awb(args)
 	MESSAGE = system_load("language/default.lua")();
+	arguments = args; -- emulate <= 0.4.0 globals
 
 -- maintain a list of global symbols
 -- from the launch, on a keypress, dump
@@ -184,7 +188,6 @@ function awb()
 	symtable = system_load("scripts/symtable.lua")();
 
 	system_load("awb_support.lua")();
-	system_load("scripts/calltrace.lua")();
 	system_load("scripts/3dsupport.lua")();
 	setup_3dsupport(true);
 
@@ -210,13 +213,6 @@ function awb()
 	awbwman_init(desktoplbl, menulbl);
 
 	awb_desktop_setup();
-
--- check that there are things that can be launched, else
--- we probably have an incomplete installation / setup
-	local gametbl = list_targets( {} );
-	if (gametbl == nil or #gametbl == 0) then
-		show_gamewarning();
-	end
 
 -- first time launching, show help window
 	if (get_key("help_shown") == nil) then
@@ -293,7 +289,10 @@ Arcan Workbench (AWB) command line options:
 		local val = v[2] ~= nil and v[2] or "";
 		local num = tonumber(val);
 
-		if (cmd == "amouse_dev" and num ~= nil) then
+		if (cmd == "noauto") then
+			noautores = true;
+
+		elseif (cmd == "amouse_dev" and num ~= nil) then
 			if (valid_adev(num) == false) then
 				return false;
 			end
@@ -349,14 +348,16 @@ function map_inputs()
 				delete_image(inrec);
 				inrec = nil;
 			else
-				inrec = alloc_surface(VRESW, VRESH);
+				print("recording on");
+				inrec = alloc_surface(VRESW, VRESH, true);
 				local nh = null_surface(VRESW, VRESH);
 				show_image(nh);
 				image_sharestorage(WORLDID, nh);
+--				image_set_txcos_default(nh, true);
 				zap_resource("recordings/dump.mkv");
 				define_recordtarget(inrec, "recordings/dump.mkv",
 					"vpreset=8:noaudio:fps=25", {nh}, {}, RENDERTARGET_DETACH,
-					RENDERTARGET_NOSCALE, -1, function() end);
+					RENDERTARGET_NOSCALE, -2, function() end);
 			end
 		end
 
@@ -374,15 +375,6 @@ function map_inputs()
 			debug_global = newglob;
 			print("[/dump globals]");
 		end;
-		kbdbinds["F9"]     = function()
-			if (global_tracing ~= true) then
-				Trace();
-				global_tracing = true;
-			else
-				global_tracing = false;
-				Untrace();
-			end
-		end
 		kbdbinds["F7"] = dumpvid;
 	end
 
@@ -458,53 +450,7 @@ function launch_factorytgt(tbl, factstr, coreopts)
 		return;
 	end
 
-	local tbl = { tag = game_info(idval) };
-	if (tbl ~= nil) then
-		local wnd = gamelist_launch(tbl, factstr, coreopts);
-	else
-		warning("broken gameid / lnk, check database reference.");
-	end
-end
-
-local function search_popup(reficn)
-	local placeholdr = desktoplbl("AAAAAAAAAAAAAAAA");
-	local wnd = awbwman_popup(placeholdr, deffont_sz - 4,
-		function() end, {ref = reficn.vid});
-
-	if (wnd == nil) then
-		return;
-	end
-
-	hide_image(wnd.cursor);
-	mouse_droplistener(wnd);
-	delete_image(placeholdr);
-
-	local cw = image_surface_properties(wnd.cursor).width;
-
-	local wndopt = {
-		owner = wnd.border.anchor,
-		w = cw
-	};
-
-	wnd.inputfield = awbwman_inputattach(
-		function(a) end, desktoplbl, wndopt);
-
-	wnd.inputfield:resize(cw, deffont_sz);
-
-	wnd.input =
-	function(self, tbl)
-		wnd.inputfield:input(tbl);
-	end
-
-	wnd.inputfield.accept = function(self)
-		local list = list_games({title = wnd.inputfield.msg});
-		if (list ~= nil and #list > 0) then
-			gamelist_tblwnd(list, wnd.inputfield.msg);
-		else
-			wnd:destroy();
-		end
-	end
-
+	warning("broken gameid / lnk, check database reference.");
 end
 
 function spawn_vidwin(self)
@@ -583,6 +529,7 @@ function show_help()
 	wnd:helpmsg(focusmsg);
 
 	local mh = {
+		name = "help_handler",
 		own = function(self, vid) return vid == wnd.canvas.vid; end,
 		click = function() wnd:focus(); end
 	};
@@ -603,7 +550,7 @@ function sortopts_popup(ent, wnd)
 		wnd:force_update();
 	end
 
-	local popup_opts = [[Title(Asc)\n\rTitle(Desc)\n\rGenre(Asc)\n\rGenre(Desc)\n\r]];
+	local popup_opts = [[Title(Asc)\n\rTitle(Desc)]];
 	local popup_fun = {
 		function() sortfun = function(a, b)
 			return string.lower(a.title) < string.lower(b.title);
@@ -612,60 +559,32 @@ function sortopts_popup(ent, wnd)
 		function() sortfun = function(a, b)
 			return string.lower(a.title) > string.lower(b.title);
 		end resort(); end,
-
-		function() sortfun = function(a, b)
-			return string.lower(a.genre) < string.lower(b.genre);
-		end resort(); end,
-
-		function() sortfun = function(a, b)
-			return string.lower(a.genre) > string.lower(b.genre);
-		end resort(); end
 	};
 
 	local vid, lines = desktoplbl(popup_opts);
 	awbwman_popup(vid, lines, popup_fun);
 end
 
-function gamelist_popup(ent, wnd)
-	local popup_opts = [[Launch\n\rFind Media\n\rList Siblings\n\rSort...]];
-	local vid, list  = desktoplbl(popup_opts);
-	local popup_fun = {
-		function() gamelist_launch(ent);     end,
-		function() awbbrowse_gamedata(ent.tag);  end,
-		function()
-			local tbl = game_family(ent.gameid);
-
-			if (#tbl > 0) then
-				local restbl = {};
-
-				for i,j in ipairs(tbl) do
-					local gtbl = game_info(j);
-					if (gtbl ~= nil and gtbl[1] ~= nil) then
-						table.insert(restbl, gtbl[1]);
-					end
-				end
-
-				if (#restbl > 0) then
-					gamelist_tblwnd(restbl, "Family: " .. ent.name);
-				end
-			end
-		end,
-		function()
-			sortopts_popup(ent, wnd);
-		end
-	};
-
-	awbwman_popup(vid, list, popup_fun);
-end
-
-function gamelist_tblwnd(tbl, capt)
+function gamelist_tblwnd(tbl, tgtname)
 	if (tbl == nil or #tbl == 0) then
+		return;
+	end
+
+	local pfg = string.lower(
+		string.gsub(string.sub(tgtname, 1, 4), " ", ""));
+
+	if (#tbl == 1) then
+		local tag = {name = tgtname, target = tgtname};
+		tag.tag = tag;
+		tag.config = tbl[1];
+		tag.prefix = pfg;
+		gamelist_launch(tag);
 		return;
 	end
 
 	local ltf = function(self) gamelist_launch(self); end;
 
-	local wnd = awbwman_listwnd(menulbl(capt), deffont_sz, linespace,
+	local wnd = awbwman_listwnd(menulbl(tgtname), deffont_sz, linespace,
 		{0.7, 0.3}, function(filter, ofs, lim, iconw, iconh)
 			local ul = ofs + lim;
 			local res = {};
@@ -675,16 +594,15 @@ function gamelist_tblwnd(tbl, capt)
 			for i=ofs,ul do
 				if (tbl[i] ~= nil) then
 				local ent = {
-					name = tbl[i].title,
-					gameid = tbl[i].gameid,
-					target = tbl[i].target,
-					tag = tbl[i],
-					rtrigger = gamelist_popup,
+					name = tbl[i],
+					target = tgtname,
+					config = tbl[i],
 					trigger = ltf,
-					cols = {tbl[i].title, (tbl[i].genre ~= nil and
-						string.len(tbl[i].genre) > 0) and tbl[i].genre or "(none)"}
+					prefix = pfg .. "_" .. string.gsub(
+						string.sub(tbl[i], 1, 4), " ", ""),
+					cols = {tbl[i]}
 				};
-
+				ent.tag = ent;
 				table.insert(res, ent);
 				end
 			end
@@ -693,7 +611,7 @@ function gamelist_tblwnd(tbl, capt)
 		end, desktoplbl, {});
 
 	if (wnd ~= nil) then
-		wnd.name = "List(" .. capt .. ")";
+		wnd.name = "List(" .. tgtname .. ")";
 		wnd.data = tbl;
 	end
 end
@@ -729,7 +647,7 @@ end
 function add_shortcut(dst, ctag)
 	local ind  = 1;
 --	local base = string.match(ctag.caption, "[%a %d_-]+");
-	local line = "shortcuts/" .. dst .. ".lnk";
+	local line = "shortcuts/" .. dst .. ".lua";
 
 	if (open_rawresource(line)) then
 		write_rawresource(shortcut_str(dst, ctag));
@@ -757,7 +675,7 @@ function add_shortcut(dst, ctag)
 					launch_factorytgt(tbl, tbl.factorystr);
 				end,
 				function(self)
-					shortcut_popup(self, tbl, dst .. ".lnk");
+					shortcut_popup(self, tbl, dst .. ".lua");
 				end,
 				{w = w, h = h, helper = tbl.caption}
 			);
@@ -870,7 +788,7 @@ end
 local function vmediahandler(path, base, ext)
 	local name = path .. "/" .. base .. "." .. ext;
 	local wnd, tfun = awbwman_mediawnd(menulbl("Media Player"));
-	local vid, aid = load_movie(name, FRAMESERVER_NOLOOP, tfun);
+	local vid, aid = launch_decode(name, "loop", tfun);
 	wnd.controlid = vid;
 	wnd.recv = aid;
 	wnd.name = base;
@@ -1032,7 +950,7 @@ function awb_desktop_setup()
 			name = MESSAGE["GROUP_VIDEOS"],
 			key = "videos",
 			trigger = function()
-				wnd_media("movies");
+				wnd_media("videos");
 			end
 		},
 	};
@@ -1046,7 +964,7 @@ function awb_desktop_setup()
 	local cfg = awbwman_cfg();
 	cfg.on_rootdnd = rootdnd;
 
-	local rtbl = glob_resource("shortcuts/*.lnk");
+	local rtbl = glob_resource("shortcuts/*.lua");
 	if (rtbl) then
 		for k,v in ipairs(rtbl) do
 			local tbl = system_load("shortcuts/" .. v)();
@@ -1062,10 +980,6 @@ function awb_desktop_setup()
 			end
 		end
 	end
-
-	local tbar = awbwman_cfg().root.dir.t;
-	tbar:add_icon("search", "r", cfg.bordericns["search"],
-		function(self) search_popup(self); end);
 end
 
 function get_root_icon(hint)
@@ -1086,12 +1000,13 @@ end
 function builtin_group(self, ofs, lim, desw, desh)
 	local tools = {
  		{"BOING!",    spawn_boing, "boing"   },
-		{"InputConf", awb_inputed, "inputed" },
+		{"CLI",       spawn_shell, "shell"   },
+		{"Input",     awb_inputed, "inputed" },
 		{"Recorder",  function() spawn_vidrec(false); end, "vidrec" },
 		{"Remoting",  function() spawn_vidrec(true); end, "remoting" },
 		{"Compare",   spawn_vidcmp, "vidcmp" },
-		{"Network",   spawn_socsrv, "network"},
-		{"VNC client", function() spawn_vncclient(); end, "remoting_cl" },
+--		{"Network",   spawn_socsrv, "network"},
+		{"VNC", function() spawn_vncclient(); end, "remoting_cl" },
 		{"VidCap",    spawn_vidwin, "vidcap" },
 		{"HeightMap", spawn_hmap, "hghtmap"  }
 	};
@@ -1116,6 +1031,12 @@ function system_group(self, ofs, lim, desw, desh)
 	if (system_group_last == nil or CLOCK - system_group_last > 1000) then
 		system_group_last = CLOCK;
 		system_group_targets = list_targets();
+		for i=#system_group_targets,1,-1 do
+			local cfg = target_configurations(system_group_targets[i]);
+			if (not cfg or #cfg == 0) then
+				table.remove(system_group_targets, i);
+			end
+		end
 	end
 
 	local restbl = {};
@@ -1132,6 +1053,28 @@ function system_group(self, ofs, lim, desw, desh)
 	end
 
 	return restbl, #system_group_targets;
+end
+
+function spawn_shell()
+	local wnd, tfun = awbwman_cliwnd(menulbl("CLI"));
+	local argstr = "env=ARCAN_CONNPATH=awb:";
+
+	local col = awbwman_cfg().col;
+
+--	for i=1,15 do
+--		argstr = argstr .. string.format("ci=%d,255,255,255:", i);
+--	end
+
+	argstr = argstr .. string.format("bgc=%d,%d,%d:fgc=255,255,255:cc=240,128,0",
+		col.bgcolor.r, col.bgcolor.g, col.bgcolor.b);
+
+	wnd.controlid = launch_avfeed(argstr, "terminal", tfun);
+	image_sharestorage(wnd.controlid, wnd.canvas.vid);
+	wnd.name = "cli";
+	if (not valid_vid(wnd.controlid)) then
+		wnd:destroy();
+		return;
+	end
 end
 
 --
@@ -1166,7 +1109,6 @@ end
 -- to control the cursor through another device
 function translate_adev(iotbl)
 	local cfg = awbwman_cfg();
-
 	if (iotbl.kind == "analog" and not cfg.mouse_focus) then
 		if (iotbl.subid == amouse_map.x) then
 			iotbl.source = "mouse";
@@ -1192,6 +1134,8 @@ function awb_display_state(state, data)
 	awbwman_displaystate(state, data);
 end
 
+local mid_c = 0;
+local mid_v = {0, 0};
 function awb_input(iotbl)
 -- if not locked to a window, and enabled,
 -- map an analog device to emitt the same events as the mouse would
@@ -1201,9 +1145,19 @@ function awb_input(iotbl)
 	end
 
 	if (iotbl.kind == "analog" and iotbl.source == "mouse") then
-		if (awbwman_minput(iotbl)) then
-			mouse_input(iotbl.subid == 0 and iotbl.samples[2] or 0,
-				iotbl.subid == 1 and iotbl.samples[2] or 0, minputtbl);
+		if (iotbl.relative) then
+			if (iotbl.subid == 0) then
+				mouse_input(iotbl.samples[2], 0);
+			else
+				mouse_input(0, iotbl.samples[2]);
+			end
+		else
+			mid_v[iotbl.subid+1] = iotbl.samples[1];
+			mid_c = mid_c + 1;
+			if (mid_c == 2) then
+				mouse_absinput(mid_v[1], mid_v[2]);
+				mid_c = 0;
+			end
 		end
 
 	elseif (iotbl.kind == "digital" and iotbl.source == "mouse") then
@@ -1216,7 +1170,7 @@ function awb_input(iotbl)
 
 			minputtbl[iotbl.subid] = iotbl.active;
 			if (awbwman_minput(iotbl)) then
-				mouse_input(0, 0, minputtbl);
+				mouse_button_input(iotbl.subid, iotbl.active);
 			end
 		end
 
@@ -1256,4 +1210,17 @@ function awb_shutdown()
 		save_screenshot("background.png", 0,
 			awbwman_cfg().root.canvas.vid);
 	end
+end
+
+local OLDW = VRESW;
+local OLDH = VRESH;
+function VRES_AUTORES(w, h, vppcm, flags, source)
+	if (noautores) then
+		return;
+	end
+
+	resize_video_canvas(w, h);
+	awbwman_relayout(w - OLDW, h - OLDH);
+	OLDW = w;
+	OLDH = h;
 end

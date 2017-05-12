@@ -186,8 +186,6 @@ local function awnd_callback(pwin, source, status)
 		pwin.controlid = source;
 	end
 
-	print(status.kind);
-
 -- update_canvas will delete this one
 	if (status.kind == "terminated") then
 		pwin.playlist_ofs = pwin.playlist_ofs + 1;

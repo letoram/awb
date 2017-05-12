@@ -38,23 +38,6 @@ local function getskipval(str)
 end
 
 local function target_coreopts(wnd)
-	local fn = string.format("coreopts/%s.cfg", wnd.gametbl.target);
-	if (resource(fn)) then
-		zap_resource(fn);
-	end
-
-	if (open_rawresource(fn)) then
-		local lines = {};
-		for k,v in pairs(wnd.coreopts) do
-			if (v.value ~= nil) then
-				table.insert(lines, string.format("res[\"%s\"] = [[%s]];", k, v.value));
-			end
-		end
-
-		write_rawresource(string.format(
-			"local res = {};\n%s\nreturn res;", table.concat(lines, "\n"))
-		);
-	end
 end
 
 local function spawn_corewnd(wnd)
@@ -189,75 +172,6 @@ local function inputlay_sel(icn, wnd)
 		wnd.inp_val = lst[ind];
 		wnd.inp_cfg = inputed_getcfg(lst[ind]);
 	end, {ref = icn.vid});
-end
-
--- save the current wnd advanced settings,
--- ind : 1 (game/target specific)
--- ind : 2 (target specific)
--- ind : 3 (global)
-local function global_cfgname(gametbl)
-	return "tgtdefaults/global.lua";
-end
-
-local function target_cfgname(gametbl)
-	return string.format("tgtdefaults/%s.lua", gametbl.target);
-end
-
-local function targetgame_cfgname(gametbl)
-	return string.format("tgtdefaults/%s_%d.lua", gametbl.target, gametbl.gameid);
-end
-
-local function advanced_defaults(wnd, ind)
-	local dstfile;
-
-	if (ind == 1) then
-		dstfile = targetgame_cfgname(wnd.gametbl);
-	elseif (ind == 2) then
-		dstfile = target_cfgname(wnd.gametbl);
-	else
-		dstfile = global_cfgname(wnd.gametbl);
-	end
-
-	zap_resource(dstfile);
-	if (not open_rawresource(dstfile)) then
-		warning(string.format("Failed saving settings to (%s)", dwtfile));
-		return;
-	end
-
--- should really segment / refactor all these
--- little settings into seperate tables and just
--- iterate / expand that way
-	write_rawresource(string.format([[
-local args = {};
-args.skipmode = "%s";
-args.graphdbg = %s;
-args.framealign = %d;
-args.preaud = %d;
-args.jitterstep = %d;
-args.jitterxfer = %d;
-args.mouse_mode = "%s";
-args.mouse_accel = %f;
-args.mousex_pl = %d;
-args.mousex_ax = %d;
-args.mousey_pl = %d;
-args.mousey_ax = %d;
-args.mouselb_pl = %d;
-args.mouselb_btn = %d;
-args.mouserb_pl = %d;
-args.mouserb_btn = %d;
-return args;]],
-		wnd.skipmode, tostring(wnd.graphdbg),
-		wnd.framealign,
-		wnd.preaud, wnd.jitterstep,
-		wnd.jitterxfer, wnd.mouse_mode,
-		wnd.mouse_accel, wnd.mousex_pl,
-		wnd.mousex_ax, wnd.mousey_pl,
-		wnd.mousey_ax, wnd.mouselb_pl,
-		wnd.mouselb_btn, wnd.mouserb_pl,
-		wnd.mouserb_btn
-		));
-
-	close_rawresource();
 end
 
 function awbtarget_settingswin(tgtwin)
@@ -457,18 +371,6 @@ function awbtarget_settingswin(tgtwin)
 		return;
 	end
 
-	if (tgtwin.external_source == nil) then
-	newwnd.dir.t:add_icon("save", "l", awbwman_cfg().bordericns["save"],
-		function(self)
-			local savetbl = {'Game Defaults', 'Target Defaults', 'Global Defaults'};
-				local vid,lines = desktoplbl(table.concat(savetbl, "\\n\\r"));
-				awbwman_popup(vid, lines,
-					function(ind) advanced_defaults(tgtwin, ind);
-				end);
-		end
-	);
-	end
-
 	tgtwin:add_cascade(newwnd);
 end
 
@@ -485,7 +387,7 @@ function awbtarget_listsnaps(tgtwin, gametbl)
 -- The number of possible savestates make this one difficult
 -- to maintain as a popup, so use a list window
 		local newwnd = awbwman_listwnd(
-			menulbl(gametbl.title .. ":savestates"), deffont_sz, linespace, {1.0},
+			menulbl(gametbl.name .. ":savestates"), deffont_sz, linespace, {1.0},
 			function(filter, ofs, lim, iconw, iconh)
 				local res = {};
 				local ul  = ofs + lim;
@@ -534,6 +436,9 @@ end
 local function awbtarget_addstateopts(pwin)
 	local cfg = awbwman_cfg();
 	local bartt = pwin.dir.tt;
+	if (not bartt) then
+		return;
+	end
 
 	bartt.hoverlut[
 	(bartt:add_icon("save", "l", cfg.bordericns["save"], function(self)
@@ -725,6 +630,9 @@ end
 local function awbtarget_dropstateopts(pwin)
 	local cfg = awbwman_cfg();
 	local bartt = pwin.dir.tt;
+	if (not bartt) then
+		return;
+	end
 
 	for i=#bartt.left,1,-1 do
 		if (bartt.left[i].name == "save") then
@@ -1000,7 +908,7 @@ local function datashare(wnd)
 	res.audio = wnd.reca;
 
 	if (res.name == nil) then
-		res.name = wnd.gametbl.title;
+		res.name = wnd.gametbl.name;
 	end
 
 	res.factory = gen_factorystr(wnd);
@@ -1022,7 +930,7 @@ local function datashare(wnd)
 
 	res.coreargs = "";
 
-	res.caption = wnd.gametbl.title;
+	res.caption = wnd.gametbl.name;
 	res.icon = wnd.gametbl.target;
 	res.source = wnd;
 	return res;
@@ -1132,16 +1040,6 @@ end
 local function load_settings(pwin, gametbl)
 	local srctbl;
 
-	if (resource(targetgame_cfgname(gametbl))) then
-		srctbl = system_load(targetgame_cfgname(gametbl))();
-
-	elseif (resource(target_cfgname(gametbl))) then
-		srctbl = system_load(target_cfgname(gametbl))();
-
-	elseif (resource(global_cfgname(gametbl))) then
-		srctbl = system_load(global_cfgname(gametbl))();
-	end
-
 	if (srctbl == nil or type(srctbl) ~= "table") then
 		return;
 	end
@@ -1152,7 +1050,7 @@ local function load_settings(pwin, gametbl)
 end
 
 local function subwin_cb(source, status)
-	print(status.kind);
+	-- print(status.kind);
 end
 
 --
@@ -1504,7 +1402,6 @@ function awbwnd_target(pwin, caps, factstr)
 			force_image_blend(pwin.canvas.vid, BLEND_NONE);
 
 		elseif (status.kind == "state_size") then
-			print(status.state_size, "state size hint");
 			pwin:drop_statectls();
 
 			if (status.state_size > 0) then
@@ -1606,37 +1503,28 @@ function targetwnd_setup(game, factstr, coreargs)
 		end
 	end
 
-	local captbl = launch_target_capabilities(game.target);
-	if (captbl == nil) then
-		awbwman_alert("Couldn't get capability table");
+	local captbl = {};
+
+	captbl.prefix = string.format("%s_%s_", game.target,
+		game.setname and game.setname or "");
+
+	local wnd, cb = awbwman_targetwnd(menulbl(game.name),
+		{refid = "targetwnd_" .. tostring(game.gameid),
+		 factsrc = factstr}, captbl);
+	if (wnd == nil) then
 		return;
 	end
 
-	if (captbl.internal_launch == false) then
--- confirmation dialog missing
-		launch_target(game.gameid, LAUNCH_EXTERNAL);
-	else
-		captbl.prefix = string.format("%s_%s_", game.target,
-			game.setname and game.setname or "");
+	wnd.gametbl = game;
+	load_settings(wnd, game);
 
-		game.name = game.title;
-		local wnd, cb = awbwman_targetwnd(menulbl(game.name),
-			{refid = "targetwnd_" .. tostring(game.gameid),
-			 factsrc = factstr}, captbl);
-		if (wnd == nil) then
-			return;
-		end
-
-		wnd.gametbl = game;
-		load_settings(wnd, game);
-
-		wnd.def_shader = "default_target";
-		wnd.real_destroy = wnd.destroy;
-		wnd.destroy = function(self, speed)
-			local vid, lines = desktoplbl("Close");
-			awbwman_popup(vid, lines, function() wnd:real_destroy(speed); end,
-				{ref = wnd.dir.t.left[1].vid});
-		end;
+	wnd.def_shader = "default_target";
+	wnd.real_destroy = wnd.destroy;
+	wnd.destroy = function(self, speed)
+		local vid, lines = desktoplbl("Close");
+		awbwman_popup(vid, lines, function() wnd:real_destroy(speed); end,
+			{ref = wnd.dir.t.left[1].vid});
+	end;
 
 		local tgtargs = nil;
 
@@ -1653,12 +1541,16 @@ function targetwnd_setup(game, factstr, coreargs)
 			end
 		end
 
-		wnd.recv, wnd.reca = launch_target(game.gameid,
-			LAUNCH_INTERNAL, cb, tgtargs);
+	print(debug.traceback(), game.target, game.config);
+	wnd.factory_base = "fb";
+	local vid = launch_target(game.target, game.config, LAUNCH_INTERNAL, cb);
 
-		wnd.factory_base = "gameid=" .. tostring(game.gameid);
-
-		wnd.name = game.target .. "(" .. game.name .. ")";
-		return wnd;
+	if (not valid_vid(vid, TYPE_FRAMESERVER)) then
+		wnd:break_display();
+		return;
 	end
+
+	wnd.recv = vid;
+	wnd.name = game.target .. "(" .. game.name .. ")";
+	return wnd;
 end

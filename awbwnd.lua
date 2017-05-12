@@ -48,12 +48,11 @@ function awbwnd_set_border(s, sz, r, g, b)
 
 		s.default_resize = s.resize;
 		s.resize = function(self, neww, newh, completed, dt)
-			if (dt == nil) then
+			if (dt == nil or type(dt) ~= "number") then
 				dt = 0;
 			end
 
 			s:default_resize(neww, newh, completed, dt);
-
 			move_image(s.borders.t, 0 - sz, 0 - sz, dt);
 			move_image(s.borders.b, 0 - sz, s.h, dt);
 			move_image(s.borders.l, 0 - sz, 0, dt);
@@ -152,11 +151,6 @@ local function awbwnd_resize(self, neww, newh, finished, canvassz)
 			move_image(self.dir.r.vid, xofs + hspace, yofs);
 		end
 		self.dir.r:resize(self.dir.r.size, vspace);
-	end
-
-	if (canvassz and (xofs > 0 or yofs > 0)) then
-		awbwnd_resize(self, neww + xofs, newh + xofs, finished, false);
-		return;
 	end
 
 	resize_image(self.anchor, neww, newh);
@@ -774,7 +768,6 @@ function awbwnd_subwin_inputfunc(self, iotbl)
 			return;
 		end
 
-		print(keych, iotbl.keysym);
 		self.msg, nch = string.insert(self.msg,
 			keych, self.caretpos, self.nchars);
 		self.caretpos = self.caretpos + nch;

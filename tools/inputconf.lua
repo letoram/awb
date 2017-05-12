@@ -1,7 +1,7 @@
 --
 -- Keyboard input here is similar to the more simple keyconf.lua
 -- It uses the same translation mechanism from table to identity string
--- but uses the awbwman* class of functions to build the UI etc. functions 
+-- but uses the awbwman* class of functions to build the UI etc. functions
 --
 
 --
@@ -14,13 +14,13 @@ local function splits(instr, delim)
 	local res = {};
 	local strt = 1;
 	local delim_pos, delim_stp = string.find(instr, delim, strt);
-	
+
 	while delim_pos do
 		table.insert(res, string.sub(instr, strt, delim_pos-1));
 		strt = delim_stp + 1;
 		delim_pos, delim_stp = string.find(instr, delim, strt);
 	end
-	
+
 	table.insert(res, string.sub(instr, strt));
 	return res;
 end
@@ -28,7 +28,7 @@ end
 local function keyconf_idtotbl(self, idstr)
 	local res = self.table[ idstr ];
 	if (res == nil) then return nil; end
-	
+
 	restbl = splits(res, ":");
 	if (restbl[1] == "digital") then
 		restbl.kind = "digital";
@@ -36,7 +36,7 @@ local function keyconf_idtotbl(self, idstr)
 		restbl.subid = tonumber(restbl[3]);
 		restbl.source = restbl[4];
 		restbl.active = false;
-		
+
 	elseif (restbl[1] == "translated") then
 		restbl.kind = "digital";
 		restbl.translated = true;
@@ -44,7 +44,7 @@ local function keyconf_idtotbl(self, idstr)
 		restbl.keysym = tonumber(restbl[3]);
 		restbl.modifiers = restbl[4] == nil and 0 or tonumber(restbl[4]);
 		restbl.active = false;
-		
+
 	elseif (restbl[1] == "analog") then
 		restbl.kind = "analog";
 		restbl.devid = tonumber(restbl[2]);
@@ -53,22 +53,22 @@ local function keyconf_idtotbl(self, idstr)
 	else
 		restbl = nil;
 	end
-	
+
 	return restbl;
 end
 
 local function keyconf_tbltoid(self, itbl)
 	if (itbl.kind == "analog") then
-		return string.format("analog:%d:%d", 
+		return string.format("analog:%d:%d",
 			itbl.devid, itbl.subid);
 	end
 
 	if itbl.translated then
 		if self.ignore_modifiers then
-			return string.format("translated:%d:%s:0", 
+			return string.format("translated:%d:%s:0",
 				itbl.devid, itbl.keysym);
 		else
-			return string.format("translated:%d:%d:%s", 
+			return string.format("translated:%d:%d:%s",
 				itbl.devid, itbl.keysym, itbl.modifiers);
 		end
 	else
@@ -109,23 +109,23 @@ local function pop_deftbl(tbl, pc, bc, ac, other)
 	tbl["FASTFORWARD"] = nulstr;
 
 	for i=1,pc do
-		for j=1,bc do 
-			tbl["PLAYER" .. tostring(i) .. "_BUTTON" ..tostring(j)] = 
-				nulstr;	
+		for j=1,bc do
+			tbl["PLAYER" .. tostring(i) .. "_BUTTON" ..tostring(j)] =
+				nulstr;
 		end
 
 		tbl["PLAYER" .. tostring(i) .. "_UP"]    = nulstr;
 		tbl["PLAYER" .. tostring(i) .. "_DOWN"]  = nulstr;
 		tbl["PLAYER" .. tostring(i) .. "_LEFT"]  = nulstr;
-		tbl["PLAYER" .. tostring(i) .. "_RIGHT"] = nulstr; 
+		tbl["PLAYER" .. tostring(i) .. "_RIGHT"] = nulstr;
 
 		for j=1,ac do
-			tbl["PLAYER" .. tostring(i) .. "_AXIS" .. tostring(j)] = 
+			tbl["PLAYER" .. tostring(i) .. "_AXIS" .. tostring(j)] =
 				"analog:0:0:none";
 		end
 
 		for k,v in pairs(other) do
-			tbl["PLAYER" .. tostring(i) .. "_" .. v] = 
+			tbl["PLAYER" .. tostring(i) .. "_" .. v] =
 				"translated:0:0:none";
 		end
 	end
@@ -141,9 +141,9 @@ local function keyconf_buildtable(self, label, state)
 	local matchtbl = self:idtotbl(label);
 
 	if (matchtbl == nil) then return nil; end
-	
+
 -- if we don't get a table from an input event, we build a small empty table,
--- with the expr-eval of state as basis 
+-- with the expr-eval of state as basis
 	local worktbl = {};
 
 	if (type(state) ~= "table") then
@@ -153,12 +153,12 @@ local function keyconf_buildtable(self, label, state)
 		worktbl = state;
 	end
 
--- safety check, analog must be mapped to analog 
+-- safety check, analog must be mapped to analog
 -- (translated is a subtype of digital so that can be reused)
 	if (worktbl.kind == "analog" and matchtbl.kind ~= "analog") then
-		return nil; 
+		return nil;
 	end
-	
+
 -- impose state / data values from the worktable unto the matchtbl
 	if (matchtbl.kind == "digital") then
 		matchtbl.active = worktbl.active;
@@ -202,7 +202,7 @@ local function keyconf_match(self, input, label)
 		else
 			return kv == label;
 		end
-		
+
 		return false;
 	end
 
@@ -215,7 +215,7 @@ local function insert_unique(tbl, key)
 			return;
 		end
 	end
-	
+
 	table.insert(tbl, key);
 end
 
@@ -227,14 +227,14 @@ local function input_anal(edittbl, startofs)
 		{
 			caption = cfg.defrndfun("Select"),
 			trigger = function(owner)
-				edittbl.parent.table[edittbl.name] = 
-					string.format("analog:%d:%d", devtbl[owner.cur_ind].devid, 
+				edittbl.parent.table[edittbl.name] =
+					string.format("analog:%d:%d", devtbl[owner.cur_ind].devid,
 					devtbl[owner.cur_ind].subid);
 
 				edittbl.parent:update_list();
 				edittbl.parent.wnd:force_update();
 			end
-		},	
+		},
 		{
 			caption = cfg.defrndfun("Cancel"),
 			trigger = function(owner)
@@ -254,8 +254,8 @@ local function input_anal(edittbl, startofs)
 		local msg = string.format([[
 (Arrow Keys to step Axis/Device)\n\r
 Current(%d/%d):\t %d : %d\n\r
-Sample Count:\t %d%s]], ind, #devtbl, devtbl[ind].devid, 
-			devtbl[ind].subid, count, label); 
+Sample Count:\t %d%s]], ind, #devtbl, devtbl[ind].devid,
+			devtbl[ind].subid, count, label);
 		return desktoplbl( msg );
 	end
 
@@ -271,14 +271,14 @@ Sample Count:\t %d%s]], ind, #devtbl, devtbl[ind].devid,
 		self.cur_count = 0;
 		local ainf = inputanalog_query(devtbl[self.cur_ind].devid, 0);
 		local label = nil;
-		self.tmplabel = nil; 
+		self.tmplabel = nil;
 
 		if (ainf and ainf.label ~= nil) then
-			if (inputed_glut and 
+			if (inputed_glut and
 				inputed_glut[ainf.label] and
 				inputed_glut[ainf.label].analog and
 				inputed_glut[ainf.label].analog[devtbl[self.cur_ind].subid+1]) then
-				label = "\\n\\rIdentifer:\\t" .. 
+				label = "\\n\\rIdentifer:\\t" ..
 					tostring(inputed_glut[ainf.label].analog[devtbl[self.cur_ind].subid+1]);
 				self.tmplabel = label;
 			end
@@ -290,7 +290,7 @@ Sample Count:\t %d%s]], ind, #devtbl, devtbl[ind].devid,
 	local props = image_surface_resolve_properties(
 		edittbl.parent.wnd.canvas.vid);
 
-	local dlg = awbwman_dialog(updatestr(1, 0), btntbl, 
+	local dlg = awbwman_dialog(updatestr(1, 0), btntbl,
 		{x = (props.x + 20), y = (props.y + 20), nocenter = true}, false);
 	dlg.lastid = edittbl.bind;
 
@@ -308,10 +308,10 @@ Sample Count:\t %d%s]], ind, #devtbl, devtbl[ind].devid,
 		if (iotbl.active == false) then
 			return;
 		end
-	
+
 		if (iotbl.lutsym == "UP" or iotbl.lutsym == "RIGHT") then
 			step(self, 1);
-				
+
 		elseif (iotbl.lutsym == "DOWN" or iotbl.lutsym == "LEFT") then
 			step(self, -1);
 
@@ -323,7 +323,7 @@ Sample Count:\t %d%s]], ind, #devtbl, devtbl[ind].devid,
 	dlg.ainput = function(self, iotbl)
 		if (iotbl.devid == devtbl[self.cur_ind].devid and
 			iotbl.subid == devtbl[self.cur_ind].subid) then
-			
+
 			self.cur_count = self.cur_count + 1;
 			self:update_caption( updatestr( self.cur_ind, self.cur_count, self.tmplabel) );
 		end
@@ -347,13 +347,13 @@ local function input_dig(edittbl)
 			trigger = function(owner) end
 		}
 	};
-		
+
 	local msg = cfg.defrndfun( string.format("Press a button for [%s]\\n\\r\t%s",
 		edittbl.name, edittbl.bind) );
 
 	local props = image_surface_resolve_properties(edittbl.parent.wnd.canvas.vid);
 
-	local dlg = awbwman_dialog(msg, btntbl, 
+	local dlg = awbwman_dialog(msg, btntbl,
 		{x = (props.x + 20), y = (props.y + 20), nocenter = true}, false);
 	dlg.lastid = edittbl.bind;
 
@@ -370,19 +370,19 @@ local function input_dig(edittbl)
 
 			if (ainf and ainf.label ~= nil) then
 
-			if (inputed_glut and 
+			if (inputed_glut and
 				inputed_glut[ainf.label] and
 				inputed_glut[ainf.label].digital and
 				inputed_glut[ainf.label].digital[iotbl.subid+1]) then
-				alias = "\\n\\r\\t" .. 
+				alias = "\\n\\r\\t" ..
 					tostring(inputed_glut[ainf.label].digital[iotbl.subid+1]);
 			end
 
 			end
 
-			local msg = desktoplbl( 
+			local msg = desktoplbl(
 				string.format("Press a button for [%s]\\n\\r\\t%s%s",
-				edittbl.name, tblstr, alias ~= nil and alias or "") 
+				edittbl.name, tblstr, alias ~= nil and alias or "")
 			);
 
 			if (valid_vid(msg)) then
@@ -426,7 +426,7 @@ local function inputed_saveas(tbl, dstname)
 end
 
 local function inputed_editlay(intbl, dstname)
-	
+
 	intbl.update_list = function(intbl)
 		intbl.list = {};
 
@@ -440,10 +440,10 @@ local function inputed_editlay(intbl, dstname)
 				local bindstr = "";
 				local procv = v;
 
-				res.trigger = (string.sub(v, 1, 6) == "analog") 
+				res.trigger = (string.sub(v, 1, 6) == "analog")
 					and input_anal or input_dig;
-	
-				if (v == "analog:0:0:none" or 
+
+				if (v == "analog:0:0:none" or
 					v == "digital:0:0:none" or v == "translated:0:0:none") then
 					res.cols = {k, "not bound"};
 				else
@@ -453,8 +453,8 @@ local function inputed_editlay(intbl, dstname)
 			end
 		end
 
-		table.sort(intbl.list, function(a,b) 
-			return string.lower(a.name) < string.lower(b.name); 
+		table.sort(intbl.list, function(a,b)
+			return string.lower(a.name) < string.lower(b.name);
 		end);
 
 		if (intbl.wnd) then
@@ -464,7 +464,7 @@ local function inputed_editlay(intbl, dstname)
 
 	intbl:update_list();
 -- and because *** intbl don't keep track of order, sort list..
-	local wnd = awbwman_listwnd(menulbl("Input Editor"), 
+	local wnd = awbwman_listwnd(menulbl("Input Editor"),
 		deffont_sz, linespace, {0.5, 0.5}, intbl.list, desktoplbl);
 	if (wnd == nil) then
 		return;
@@ -475,7 +475,7 @@ local function inputed_editlay(intbl, dstname)
 	wnd.cascade = {};
 
 	wnd.real_destroy = wnd.destroy;
-	
+
 	wnd.destroy = function(self, speed)
 		local opt = {};
 		if (dstname) then
@@ -485,7 +485,7 @@ local function inputed_editlay(intbl, dstname)
 		table.insert(opt, "Discard");
 
 		local vid, lines = desktoplbl(table.concat(opt, "\\n\\r"));
-	
+
 		local btnhand = function(ind)
 			if (opt[ind] == "Save As") then
 				local buttontbl = {
@@ -495,7 +495,7 @@ local function inputed_editlay(intbl, dstname)
 				};
 
 				local dlg = awbwman_dialog(desktoplbl("Save As:"), buttontbl, {
-					input = { w = 100, h = 20, limit = 32, accept = 1 } 
+					input = { w = 100, h = 20, limit = 32, accept = 1 }
 				});
 				dlg.inptbl = intbl.table;
 
@@ -508,7 +508,7 @@ local function inputed_editlay(intbl, dstname)
 			end
 		end
 
-		awbwman_popup(vid, lines, btnhand, {ref = wnd.dir.t.left[1].vid}); 
+		awbwman_popup(vid, lines, btnhand, {ref = wnd.dir.t.left[1].vid});
 	end
 
 	intbl.wnd = wnd;
@@ -526,7 +526,7 @@ function inputed_translate(iotbl, cfg)
 
 	local lbls = keyconf_match(cfg, iotbl);
 
-	if (lbls == nil) then 
+	if (lbls == nil) then
 		return;
 	end
 
@@ -534,7 +534,7 @@ function inputed_translate(iotbl, cfg)
 
 	for k,v in ipairs(lbls) do
 		local tbl = keyconf_buildtable(cfg, v, iotbl);
-		table.insert(res, tbl); 
+		table.insert(res, tbl);
 	end
 
 	return res;
@@ -552,7 +552,7 @@ function inputed_inversetbl(intbl)
 
 		local found = false;
 		for h,j in ipairs(newtbl[v]) do
-			if (j == k) then 
+			if (j == k) then
 				found = true;
 				break;
 			end
@@ -621,7 +621,7 @@ local function analog_kernelpop(wnd, btn)
 	local vid, lines = desktoplbl(str);
 	awbwman_popup(vid, lines, function(ind)
 		wnd.kernel_sz = tonumber(list[ind]);
-			inputanalog_filter(wnd.dev, wnd.sub, wnd.deadzone, 
+			inputanalog_filter(wnd.dev, wnd.sub, wnd.deadzone,
 				wnd.lbound, wnd.ubound, wnd.kernel_sz, wnd.mode);
 		end, {ref = btn.vid});
 end
@@ -649,7 +649,7 @@ local function analog_filterpop(wnd, btn)
 
 	awbwman_popup(vid, lines, function(ind)
 		wnd.mode = list[ind];
-		inputanalog_filter(wnd.dev, wnd.sub, wnd.deadzone, 
+		inputanalog_filter(wnd.dev, wnd.sub, wnd.deadzone,
 			wnd.lbound, wnd.ubound, wnd.kernel_sz, wnd.mode);
 	end, {ref = btn.vid});
 end
@@ -684,8 +684,8 @@ local function update_window(dev, sub)
 			end
 		end
 
-		bar.click = function() 
-			wnd:focus(); 
+		bar.click = function()
+			wnd:focus();
 		end
 
 		local canvash = {
@@ -702,8 +702,8 @@ local function update_window(dev, sub)
 
 		wnd.hoverlut[
 		(bar:add_icon("filters", "l", cfg.bordericns["filter"],
-			function(self) 
-				analog_filterpop(wnd, self); 
+			function(self)
+				analog_filterpop(wnd, self);
 			end)).vid] = MESSAGE["ANALOG_FILTERMODE"];
 
 		wnd.hoverlut[
@@ -716,7 +716,7 @@ local function update_window(dev, sub)
 			(bar:add_icon("deadzone", "l", cfg.bordericns["aspect"],
 			function(self)
 				awbwman_popupslider(0, wnd.deadzone, 10000, function(val)
-					inputanalog_filter(wnd.dev, wnd.sub, val, 
+					inputanalog_filter(wnd.dev, wnd.sub, val,
 						wnd.lbound, wnd.ubound, wnd.kernel_sz, wnd.mode);
 					wnd:switch_device(wnd.dev, wnd.sub);
 				end, {ref = self.vid});
@@ -726,7 +726,7 @@ local function update_window(dev, sub)
 		(bar:add_icon("ubound", "l", cfg.bordericns["uparrow"],
 			function(self)
 				awbwman_popupslider(16536, wnd.ubound, 32767, function(val)
-					inputanalog_filter(wnd.dev, wnd.sub, wnd.deadzone, 
+					inputanalog_filter(wnd.dev, wnd.sub, wnd.deadzone,
 						wnd.lbound, val, wnd.kernel_sz, wnd.mode);
 					wnd:switch_device(wnd.dev, wnd.sub);
 				end, {ref = self.vid});
@@ -736,13 +736,13 @@ local function update_window(dev, sub)
 		(bar:add_icon("lbound", "l", cfg.bordericns["downarrow"],
 			function(self)
 				awbwman_popupslider(-16536, wnd.lbound, -32767, function(val)
-					inputanalog_filter(wnd.dev, wnd.sub, wnd.deadzone, 
+					inputanalog_filter(wnd.dev, wnd.sub, wnd.deadzone,
 						val, wnd.ubound, wnd.kernel_sz, wnd.mode);
 					wnd:switch_device(wnd.dev, wnd.sub);
 				end, {ref = self.vid});
 			end)).vid] = MESSAGE["ANALOG_LBOUND"];
 
-		wnd.invertvid = 
+		wnd.invertvid =
 		bar:add_icon("invert", "l", cfg.bordericns["flip"],
 			function(self)
 				if (awbwman_flipaxis(wnd.dev, wnd.sub)) then
@@ -759,11 +759,11 @@ local function update_window(dev, sub)
 		wnd.input = function() end
 
 		wnd:update_canvas(fill_surface(8, 8, 0, 0, 0));
-		
+
 		local ubound = color_surface(2, 2,   0, 255,   0);
 		local lbound = color_surface(2, 2,   0, 255, 255);
 		local  dzone = color_surface(2, 2, 128,  32,  32);
-	
+
 		image_mask_set(ubound, MASK_UNPICKABLE);
 		image_mask_set(lbound, MASK_UNPICKABLE);
 		image_mask_set(dzone, MASK_UNPICKABLE);
@@ -777,7 +777,7 @@ local function update_window(dev, sub)
 		image_inherit_order(group, true);
 		order_image(group, 1);
 
--- Map up scale and zones for the device in question 
+-- Map up scale and zones for the device in question
 -- (0 canvas, 1 bglabels, 2 samples, 3 notices)
 		wnd.switch_device = function(self, dev, sub)
 			local res = inputanalog_query(dev, sub);
@@ -798,11 +798,11 @@ local function update_window(dev, sub)
 				wnd.devlbl = res.label;
 				wnd.dev = dev;
 				wnd.sub = sub;
-				local lblcap = menulbl( 
+				local lblcap = menulbl(
 					string.format("(%d:%d)", dev, sub, res.label), 10);
 				image_tracetag(lblcap, "analog_detailcap");
 
-				if (inputed_glut and inputed_glut[res.label] and 
+				if (inputed_glut and inputed_glut[res.label] and
 					inputed_glut[res.label].analog[sub+1]) then
 					wnd.devsym = desktoplbl(tostring(inputed_glut[res.label].analog[sub+1]));
 					show_image(wnd.devsym);
@@ -845,7 +845,7 @@ local function update_window(dev, sub)
 				image_inherit_order(box, true);
 				order_image(box, 2);
 				expire_image(box, 5);
-				move_image(box, wnd.canvasw * 0.5, 
+				move_image(box, wnd.canvasw * 0.5,
 					h * 0.5 - step * iotbl.samples[1]);
 			end
 		end
@@ -878,7 +878,7 @@ local function inputed_anallay(devtbl)
 		table.insert(devs, newent);
 	end
 
-	local wnd = awbwman_listwnd(menulbl("Analog Options"), 
+	local wnd = awbwman_listwnd(menulbl("Analog Options"),
 		deffont_sz, linespace, {0.2, 0.2, 0.6}, devs, desktoplbl);
 
 	if (wnd == nil) then
@@ -887,16 +887,16 @@ local function inputed_anallay(devtbl)
 end
 
 function awb_inputed()
-	local res = glob_resource("keyconfig/*.cfg", RESOURCE_THEME);	
+	local res = glob_resource("keyconfig/*.lua");
 	local ctable = {};
 	set_tblfun(ctable);
 
 	inputed_glut = {};
-	local symres = glob_resource("keyconfig/*.sym", RESOURCE_THEME);
+	local symres = glob_resource("devconfig/*.lua");
 
 	if (symres and #symres > 0) then
 		for i, v in ipairs(symres) do
-			local resv = system_load("keyconfig/" .. v);
+			local resv = system_load("devconfig/" .. v);
 			if (resv) then
 				local group, tbl = resv();
 
@@ -918,7 +918,7 @@ function awb_inputed()
 				local activetbl = {};
 				pop_deftbl(activetbl, 4, 8, 6, {"START", "SELECT", "COIN1"});
 				ctable.table = activetbl;
-				inputed_editlay(ctable);	
+				inputed_editlay(ctable);
 			end
 		}
 	};
@@ -966,11 +966,11 @@ function awb_inputed()
 					wnd:destroy(awbwman_cfg().animspeed);
 					ctable.table = system_load("keyconfig/" .. v)();
 					if (ctable.table) then
-						inputed_editlay(ctable, v); 
+						inputed_editlay(ctable, v);
 					end
 				else
 					zap_resource("keyconfig/" .. v);
-					res = glob_resource("keyconfig/*.cfg", RESOURCE_THEME);
+					res = glob_resource("keyconfig/*.lua", RESOURCE_THEME);
 					table.remove(list, ind);
 					wnd:force_update();
 				end
@@ -979,7 +979,7 @@ function awb_inputed()
 		table.insert(list, res);
 	end
 
-	local wnd = awbwman_listwnd(menulbl("Input Editor"), 
+	local wnd = awbwman_listwnd(menulbl("Input Editor"),
 		deffont_sz, linespace, {1.0}, list, desktoplbl);
 
 	if (wnd ~= nil) then
@@ -991,7 +991,7 @@ function awb_inputed()
 end
 
 function inputed_configlist()
-	res = glob_resource("keyconfig/*.cfg", RESOURCE_THEME);
+	res = glob_resource("keyconfig/*.lua", RESOURCE_THEME);
 	return res;
 end
 
@@ -999,7 +999,7 @@ local descrtbl = {
 	name = "inputed",
 	caption = "Input",
 	icon = "ipnuted",
-	trigger = awb_inputed 
+	trigger = awb_inputed
 };
 
 return descrtbl;

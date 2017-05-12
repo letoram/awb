@@ -1,21 +1,18 @@
 AWB
 ===
 
-Arcan Workbench, Desktop- like script for Arcan
+Arcan Workbench, Desktop- like script for Arcan (~2012-2013)
 
-*Note that this project is no longer maintained. It worked up until Arcan 0.4,
-but the drastic changes to how the database for launch targets are managed,
-and some minor adjustments to rendertargets, this will flat out fail to work
-or die on script errors randomly.*
+*Note that this project is no longer maintained. The current version works
+with the arcan 0.5+ setup, while older (0.4, ...) should use the awb-04 tag.*
 
-This is primarily a sandbox for testing out new ideas and for finding
-rough spots in the Lua API and not intended as desktop environment or
-as a shining example on how to code such a thing in Arcan. Some of the
-lessons learned are fed back into API changes, and others into support
-scripts.
+The last set of patches was just to bring it up to "mostly-working" form for
+the Amiga-500 30-year anniversary.
 
-Look at the helper- images in the Wiki on the github site for a rough
-idea of existing features.
+This was used as a sandbox for testing out ideas and finding rough spots in the
+Lua API - not intended as a stable work environment or an example on how to
+build something like that, and the code is awful. Some of the lessons learned
+was fed back into other support scripts and into the engine itself.
 
 Use
 ===
@@ -23,8 +20,8 @@ This assumes a pre-existing arcan installation, preferably some targets
 and configurations in the database (see arcan-legacy for converting old
 ones).
 
-It also exposes a CONNPATH as "awb" for external processes to connect
-through.
+It also exposes an ARCAN\_CONNPATH as "awb" for external processes to
+connect through.
 
 Default keybindings:
 LCTRL - toggle mouse grab on / off

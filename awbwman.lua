@@ -593,6 +593,10 @@ local function wsetup(subkind, subdescr, caption, source, options)
 		options = {};
 	end
 
+	if (type(options) ~= "table") then
+		print(debug.traceback(options));
+	end
+
 	options.fullscreen = true;
 	local wnd = awbwman_spawn(caption, options);
 	wnd.kind = subdescr;
@@ -628,6 +632,10 @@ end
 
 function awbwman_capwnd(caption, source, options)
 	return wsetup(awbwnd_media, "capture", caption, source, options);
+end
+
+function awbwman_cliwnd(caption, source, options)
+	return wsetup(awbwnd_cli, "cli", caption, source, options);
 end
 
 function awbwman_targetwnd(caption, options, capabilities)
@@ -730,6 +738,11 @@ function awbwman_dialog(caption, buttons, options, modal)
 		options = {};
 	end
 
+	if (not valid_vid(caption)) then
+		print(debug.traceback());
+		return;
+	end
+
 	if (awb_cfg.focus_locked) then
 		awbwman_shadow_nonfocus();
 	end
@@ -817,7 +830,7 @@ function awbwman_dialog(caption, buttons, options, modal)
 		move_image(capvid, 0.5 * (cprop.width - props.width),
 			0.5 * ( (cprop.height - bheight - 10) - props.height));
 
-		image_mask_set(caption, MASK_UNPICKABLE);
+		image_mask_set(capvid, MASK_UNPICKABLE);
 		link_image(capvid, self.canvas.vid);
 		image_inherit_order(capvid, true);
 		order_image(capvid, 2);
@@ -1022,7 +1035,7 @@ function awbwman_rootwnd()
 		end
 	};
 
-	if (DEBUGLEVEL > 1) then
+	if (DEBUGLEVEL > 2) then
 		table.insert(awblist, "Dump State");
 		table.insert(ftbl, function()
 			zap_resource("state.dump");
@@ -1211,7 +1224,7 @@ function awb_clock_pulse(stamp, nticks)
 		end
 	end
 
-	if (DEBUGLEVEL > 0) then
+	if (DEBUGLEVEL > 2) then
 		local a, b = current_context_usage();
 
 		if (valid_vid(DEBUG_usage)) then
@@ -1716,6 +1729,15 @@ function awbwman_rootaddicon(name, captionvid,
 	table.insert(awb_cfg.rooticns, icntbl);
 	icntbl.mhandler = ctable;
 	return icntbl;
+end
+
+function awbwman_relayout(dw, dh)
+	for i,v in ipairs(awb_cfg.rooticns) do
+		v.x = v.x + dw;
+		v.y = v.y + dh;
+		move_image(v.anchor, v.x, v.y);
+	end
+
 end
 
 local wndbase = math.random(1000);

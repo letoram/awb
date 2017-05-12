@@ -162,6 +162,9 @@ function awbmedia_update_streamstats(win, stat)
 			delete_image(win.progr_label);
 		end
 
+		stat.ctime = string.gsub(stat.ctime, "?", ":");
+		stat.endtime = string.gsub(stat.endtime, "?", ":");
+
 		win.progr_label = desktoplbl(
 			string.format("%s / %s", string.gsub(stat.ctime, "\\", "\\\\"),
 			string.gsub(stat.endtime, "\\", "\\\\"))
@@ -205,11 +208,11 @@ function awbmedia_add_fsrvctrl(pwin, bar)
 	function(self)
 		if (pwin.paused) then
 			pwin.paused = nil;
-			resume_movie(pwin.controlid);
+			resume_target(pwin.controlid);
 			image_sharestorage(cfg.bordericns["pause"], self.vid);
 		else
 			pwin.paused = true;
-			pause_movie(pwin.controlid);
+			suspend_target(pwin.controlid);
 			image_sharestorage(cfg.bordericns["play"], self.vid);
 		end
 	end)).vid] = MESSAGE["HOVER_PLAYPAUSE"];
